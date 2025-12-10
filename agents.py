@@ -162,60 +162,70 @@ class LinearThompsonAgent(LinearRegressionAgent):
 
 class GaussianProcessAgent:
     """
-    Base Contextual Model using Gaussian Process Regression.
+    Contextual Model using Gaussian Process Regression.
     Learns non-parametric functions f_k(s) ~ GP(m, k).
-    Reference: 
+    Reference: [cite: 72-98]
     """
-    def __init__(self, n_arms=4, n_dims=3, lengthscale=1.0, noise_std=5.0):
+    def __init__(self, n_arms=4, n_dims=3, lengthscale=2.0, noise_std=5.0, signal_std=20.0):
         self.n_arms = n_arms
-        self.lengthscale = lengthscale
-        # The paper uses a noise variance sigma_n^2 in the covariance (Eq 9)
+        self.n_dims = n_dims
+        
+        # Hyperparameters
+        # The paper estimates lengthscale via gradient descent.
+        # For binary inputs (-1, 1), sq_dist is 0, 4, 8, or 12. 
+        # A lengthscale of ~2.0 to 10.0 is reasonable if not optimizing.
+        self.lengthscale = lengthscale 
+        
+        # Variance of the noise epsilon [cite: 86]
         self.noise_variance = noise_std**2
         
-        # Storage for training data: X (Contexts) and y (Rewards)
+        # Variance of the signal (amplitude). 
+        # CRITICAL FIX: The payoffs vary by ~15-30.
+        # A kernel variance of 1.0 (default in previous code) is too small to model this.
+        self.signal_variance = signal_std**2 
+
         self.X = [[] for _ in range(n_arms)]
         self.y = [[] for _ in range(n_arms)]
 
         # --- INITIALIZATION WITH PSEUDO-OBSERVATIONS ---
-        # "The Gaussian Process was initialized by the use of 10 pseudo-observations...
-        # ...created from a Normal distribution with N(50, 10)" 
+        # The paper initializes with 10 pseudo-observations N(50, 10) [cite: 71, 98]
         for arm in range(n_arms):
             for _ in range(10):
-                # 1. Create random binary context for the pseudo-observation
-                # (The paper doesn't specify context distribution for init, 
-                # but random binary covers the space best)
-                fake_ctx = np.random.randint(0, 2, size=n_dims)
+                # Contexts are binary elements on (+) or off (-) [cite: 128]
+                # Represented here as -1 and 1 to match regression logic.
+                fake_ctx = np.random.choice([-1, 1], size=n_dims)
                 
-                # 2. Sample fake outcome from N(50, 10)
+                # Sample fake outcome from N(50, 10)
                 fake_reward = np.random.normal(50, 10)
                 
-                # 3. Store
                 self.X[arm].append(fake_ctx)
                 self.y[arm].append(fake_reward)
 
     def kernel(self, x1, x2):
         """
-        Squared Exponential Kernel.
-        k(x, x') = exp( - ||x - x'||^2 / lambda )
-        Reference: Equation 8 [cite: 83]
+        Squared Exponential Kernel with Signal Amplitude.
+        Reference: Equation 8 and 9 context [cite: 83-86]
         """
-        # Squared Euclidean distance
         sq_dist = np.sum((x1 - x2)**2)
-        return np.exp(-sq_dist / self.lengthscale)
+        # Added signal_variance scaling to allow learning of large deviations (e.g. +/- 15)
+        return self.signal_variance * np.exp(-sq_dist / self.lengthscale)
 
     def predict_with_uncertainty(self, context, arm_idx):
         """
-        Calculates the posterior mean and variance for a specific arm.
-        Uses the standard GP regression formulas.
-        Reference: Equations 10-12 [cite: 91-92]
+        Calculates posterior mean and variance.
+        Reference: Equations 10-12 [cite: 90-93]
         """
         X_train = np.array(self.X[arm_idx])
         y_train = np.array(self.y[arm_idx])
         x_new = np.array(context)
         N = len(X_train)
         
-        # 1. Construct Covariance Matrix K (N x N)
-        # k(x_p, x_q) for all training points
+        # CRITICAL FIX: Center the data.
+        # GPs assume a zero-mean prior. Data is around 50[cite: 148].
+        # We subtract the mean (50) to work in residual space.
+        y_centered = y_train - 50.0
+
+        # 1. Construct Covariance Matrix K
         K = np.zeros((N, N))
         for i in range(N):
             for j in range(i, N):
@@ -223,82 +233,75 @@ class GaussianProcessAgent:
                 K[i, j] = val
                 K[j, i] = val
         
-        # Add noise variance to diagonal: K + sigma_n^2 * I (Eq 9)
+        # Add noise variance (Eq 9) [cite: 86]
         K_noise = K + self.noise_variance * np.eye(N)
         
-        # 2. Construct K_star vector (Covariance between train and test)
-        # k(x_i, x_new)
+        # 2. K_star (covariance between new point and training points)
         K_star = np.array([self.kernel(xi, x_new) for xi in X_train])
         
-        # 3. K_star_star (Prior variance of test point)
-        # k(x_new, x_new) -> exp(0) = 1.0
-        K_star_star = 1.0 
+        # 3. K_star_star (prior variance of the new point)
+        # MUST equal the signal variance (k(x,x)), not 1.0
+        K_star_star = self.signal_variance 
         
-        # 4. Calculate Posterior Mean and Variance
-        # We use strict matrix operations as defined in Eq 10 & 11
+        # 4. Posterior Mean and Variance
         try:
-            # Invert (K + sigma^2 I)
-            # Using solve is numerically more stable than inv()
-            K_inv_y = np.linalg.solve(K_noise, y_train)
+            # Solve (K + sigma^2 I)^-1 * y
+            # We use Cholesky decomposition for stability, or standard solve
+            K_inv_y = np.linalg.solve(K_noise, y_centered)
             
-            # Mean = K_star^T * (K + sigma^2 I)^-1 * y (Eq 10)
-            mean = K_star.dot(K_inv_y)
+            # Mean of residuals
+            mean_residual = K_star.dot(K_inv_y)
             
-            # Variance = k(x,x) - K_star^T * (K + sigma^2 I)^-1 * K_star (Eq 11)
+            # Add baseline (50) back to prediction
+            mean = mean_residual + 50.0
+            
+            # Variance calculation: k(x,x) - k(x,X) * (K_noise)^-1 * k(X,x)
             K_inv_k_star = np.linalg.solve(K_noise, K_star)
             variance = K_star_star - K_star.dot(K_inv_k_star)
             
-            # Clip negative variance due to numerical precision issues
+            # Numerical stability
             variance = max(variance, 1e-9)
             
         except np.linalg.LinAlgError:
-            # Fallback for singular matrix (unlikely with ridge/noise)
+            # Fallback if matrix is singular
             mean = 50.0
-            variance = 1.0
+            variance = self.signal_variance
 
         return mean, np.sqrt(variance)
 
     def select_arm(self, context):
-        """Placeholder for subclasses"""
         return 0
 
     def update(self, context, arm, reward):
-        """Stores the new observation."""
         self.X[arm].append(context)
         self.y[arm].append(reward)
 
 
 class GPUCBAgent(GaussianProcessAgent):
     """
-    Gaussian Process with Upper Confidence Bound sampling.
+    Gaussian Process with UCB (Algorithm 1)
     Reference: Algorithm 1 [cite: 105]
     """
     def select_arm(self, context):
         ucb_values = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
-            
-            # UCB = Mean + 1.96 * Std
-            # "The trade-off parameter is set to 1.96, marking the 95% confidence interval." [cite: 106]
+            # UCB with 95% confidence interval (1.96) [cite: 106]
             ucb = mu + 1.96 * sigma
             ucb_values.append(ucb)
-            
         return np.argmax(ucb_values)
 
 
 class GPThompsonAgent(GaussianProcessAgent):
     """
-    Gaussian Process with Thompson Sampling.
+    Gaussian Process with Thompson Sampling (Algorithm 2)
     Reference: Algorithm 2 [cite: 115]
     """
     def select_arm(self, context):
         sampled_values = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
-            
-            # Sample y* ~ N(mu, sigma^2)
-            # "Sample y* ~ M(s)" [cite: 115] - sampling from the posterior predictive.
+            # Sample from the posterior distribution [cite: 115]
             sample = np.random.normal(mu, sigma)
             sampled_values.append(sample)
-            
         return np.argmax(sampled_values)

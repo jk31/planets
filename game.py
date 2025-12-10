@@ -22,15 +22,16 @@ class MiningInSpaceGame:
     def _generate_context(self):
         """
         Generates the binary context (s) for the current trial.
-        Contexts are binary (+ or -)[cite: 128].
-        Constraint: Situations only containing - or + were not used.
+        Contexts are binary (+ or -).
+        Mapped to 1 (On) and -1 (Off) to match the paper's score range.
         """
         while True:
-            # 0 represents Off (-), 1 represents On (+)
-            ctx = np.random.randint(0, 2, size=3)
+            # Generate random -1 or 1
+            ctx = np.random.choice([-1, 1], size=3)
             
-            # Re-roll if all are 0 or all are 1 based on exclusion criteria
-            if np.all(ctx == 0) or np.all(ctx == 1):
+            # Constraint: Situations only containing - or + were not used [cite: 160]
+            # i.e., Exclude [-1, -1, -1] and [1, 1, 1]
+            if np.all(ctx == -1) or np.all(ctx == 1):
                 continue
             return ctx
 

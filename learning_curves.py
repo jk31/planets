@@ -43,3 +43,5 @@ plt.legend(title='Agent Strategy')
 plt.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()
+
+plt.savefig('learning_curves.pdf')

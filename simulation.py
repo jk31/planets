@@ -50,7 +50,7 @@ def run_single_game(agent_class, game_class, n_trials=150):
             
     return pd.DataFrame(history)
 
-def run_batch_simulation(agent_classes, game_class, n_simulations=50, n_trials=150):
+def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=150):
     """
     Runs the simulation for multiple agents and multiple repetitions (participants).
     
