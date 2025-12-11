@@ -2,53 +2,44 @@ import numpy as np
 import pandas as pd
 
 def run_single_game(agent_class, game_class, n_trials=150):
-    """
-    Simulates a single participant playing the game.
-    
-    Args:
-        agent_class: The class of the agent to instantiate (e.g., LinearUCBAgent).
-        game_class: The class of the game (MiningInSpaceGame).
-        n_trials: Number of trials to run (default 150).
-        
-    Returns:
-        pd.DataFrame: A record of every trial (trial, choice, reward, etc.).
-    """
-    # Instantiate specific game and agent for this run
     game = game_class(n_trials=n_trials)
     agent = agent_class() 
-    
     history = []
     
     for t in range(n_trials):
-        # 1. Observe current context
-        # We copy it because the game updates the context after the step
         context = game.current_context.copy()
         
-        # 2. Agent chooses an arm
-        # Note: Even context-blind agents accept the context argument (and ignore it)
+        # 1. ASK AGENT FOR DATA
+        # The agent handles the math (mu +/- 1.96sigma) internally
+        recs = agent.get_recommendations(context, k=1.96)
+        
+        # 2. DECISION
         arm_idx = agent.select_arm(context)
         
-        # 3. Game executes the step
+        # 3. STEP
         reward, done, info = game.step(arm_idx)
-        
-        # 4. Agent learns from the outcome
         agent.update(context, arm_idx, reward)
         
-        # 5. Log Data
-        history.append({
+        # 4. LOGGING
+        record = {
             "agent": agent_class.__name__,
             "trial": t + 1,
-            "context": str(context), # Storing as string for CSV simplicity
             "choice": arm_idx,
             "reward": reward,
-            "optimal_choice": np.argmax(info['means']), # From game debug info
-            "regret": np.max(info['means']) - info['means'][arm_idx]
-        })
+        }
         
-        if done:
-            break
+        # Unpack the agent's calculations into columns
+        for i, data in enumerate(recs):
+            record[f"mu_{i}"]    = data['mean']
+            record[f"sigma_{i}"] = data['sigma']
+            record[f"lower_{i}"] = data['lower']
+            record[f"upper_{i}"] = data['upper']
+            
+        history.append(record)
+        if done: break
             
     return pd.DataFrame(history)
+
 
 def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=150):
     """

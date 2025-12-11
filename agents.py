@@ -15,6 +15,21 @@ class RandomAgent:
     def update(self, context, arm, reward):
         pass
 
+    def get_recommendations(self, context, k=1.96):
+        results = []
+        for arm in range(self.n_arms):
+            # For MeanTracking, use self.estimates[arm] instead of 50.0
+            # For Random, just use 50.0 or 0.0
+            est = 50.0 
+            
+            results.append({
+                "mean": est,
+                "sigma": np.nan,
+                "lower": np.nan,  # NaN tells the UI "No interval here"
+                "upper": np.nan
+            })
+        return results
+
 
 class MeanTrackingAgent:
     """
@@ -37,15 +52,31 @@ class MeanTrackingAgent:
         # Incremental mean update [cite: 59]
         self.estimates[arm] += (1/n) * (reward - self.estimates[arm])
 
+    def get_recommendations(self, context, k=1.96):
+        results = []
+        for arm in range(self.n_arms):
+            # For MeanTracking, use self.estimates[arm] instead of 50.0
+            # For Random, just use 50.0 or 0.0
+            est = 50.0 
+            
+            results.append({
+                "mean": est,
+                "sigma": np.nan,
+                "lower": np.nan,  # NaN tells the UI "No interval here"
+                "upper": np.nan
+            })
+        return results
+
 
 class LinearRegressionAgent:
     """
     Base Contextual Model using Recursive Least Squares.
     Reference: [cite: 64-71]
     """
-    def __init__(self, n_arms=4, n_features=3):
+    def __init__(self, n_arms=4, n_features=3, pseudo_observations=True):
         self.n_arms = n_arms
         self.n_features = n_features + 1 # +1 for intercept
+        self.pseudo_observations = pseudo_observations
         
         # Storage for RLS matrices
         self.A_inv = [] 
@@ -66,8 +97,11 @@ class LinearRegressionAgent:
             
             # Generate 10 pseudo-observations
             for _ in range(10):
+                if not self.pseudo_observations:
+                    break
+                
                 # Random binary context (guess based on GP section which implies similar setup)
-                fake_ctx = np.random.randint(0, 2, size=n_features)
+                fake_ctx = np.random.choice([-1, 1], size=n_features)
                 fake_x = np.concatenate(([1.0], fake_ctx))
                 
                 # Sample fake outcome from N(50, 10) 
@@ -126,6 +160,33 @@ class LinearRegressionAgent:
         
         self.b[arm] += reward * x
 
+    def get_recommendations(self, context, k=1.96):
+        """
+        Returns the full package of data needed for the UI or Analysis.
+        
+        Args:
+            context: The current state/context.
+            k (float): Confidence multiplier (1.96 = 95% CI).
+            
+        Returns:
+            List of dicts, one for each arm:
+            [{'mean': 50.0, 'sigma': 10.0, 'lower': 30.4, 'upper': 69.6}, ...]
+        """
+        results = []
+        for arm in range(self.n_arms):
+            mu, sigma = self.predict_with_uncertainty(context, arm)
+            
+            # Ensure sigma is not NaN (for safety)
+            if np.isnan(sigma): sigma = 0.0
+                
+            results.append({
+                "mean": mu,
+                "sigma": sigma,
+                "lower": mu - (k * sigma),
+                "upper": mu + (k * sigma)
+            })
+        return results
+
 
 class LinearUCBAgent(LinearRegressionAgent):
     """
@@ -159,6 +220,7 @@ class LinearThompsonAgent(LinearRegressionAgent):
             
         # Algorithm 2: Choose argmax
         return np.argmax(sampled_values)
+
 
 class GaussianProcessAgent:
     """
@@ -275,6 +337,34 @@ class GaussianProcessAgent:
     def update(self, context, arm, reward):
         self.X[arm].append(context)
         self.y[arm].append(reward)
+
+
+    def get_recommendations(self, context, k=1.96):
+        """
+        Returns the full package of data needed for the UI or Analysis.
+        
+        Args:
+            context: The current state/context.
+            k (float): Confidence multiplier (1.96 = 95% CI).
+            
+        Returns:
+            List of dicts, one for each arm:
+            [{'mean': 50.0, 'sigma': 10.0, 'lower': 30.4, 'upper': 69.6}, ...]
+        """
+        results = []
+        for arm in range(self.n_arms):
+            mu, sigma = self.predict_with_uncertainty(context, arm)
+            
+            # Ensure sigma is not NaN (for safety)
+            if np.isnan(sigma): sigma = 0.0
+                
+            results.append({
+                "mean": mu,
+                "sigma": sigma,
+                "lower": mu - (k * sigma),
+                "upper": mu + (k * sigma)
+            })
+        return results
 
 
 class GPUCBAgent(GaussianProcessAgent):
