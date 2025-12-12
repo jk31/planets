@@ -92,6 +92,7 @@ class LinearRegressionAgent:
             
             # Standard RLS initialization:
             # A_inv = (1/delta) * I.  delta is small ridge factor.
+            # TODO: try out different delta values.
             current_A_inv = np.eye(self.n_features) * 100.0 
             current_b = np.zeros(self.n_features)
             
