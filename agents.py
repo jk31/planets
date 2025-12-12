@@ -93,7 +93,7 @@ class LinearRegressionAgent:
             # Standard RLS initialization:
             # A_inv = (1/delta) * I.  delta is small ridge factor.
             # TODO: try out different delta values.
-            current_A_inv = np.eye(self.n_features) * 100.0 
+            current_A_inv = np.eye(self.n_features) * 1000
             current_b = np.zeros(self.n_features)
             
             # Generate 10 pseudo-observations
@@ -254,6 +254,7 @@ class GaussianProcessAgent:
         # The paper initializes with 10 pseudo-observations N(50, 10) [cite: 71, 98]
         for arm in range(n_arms):
             for _ in range(10):
+                break
                 # Contexts are binary elements on (+) or off (-) [cite: 128]
                 # Represented here as -1 and 1 to match regression logic.
                 fake_ctx = np.random.choice([-1, 1], size=n_dims)

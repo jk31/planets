@@ -101,7 +101,7 @@ class MiningInSpaceGame:
         return reward, done, {
             "means": means,
             "context_names": [
-                f"{name}: {'+' if val else '-'}" 
+                f"{name}: {'+' if val == 1 else '-'}" 
                 for name, val in zip(self.context_names, self.current_context)
             ]
         }
