@@ -41,7 +41,7 @@ class MiningInSpaceGame:
         s represents the context vector [s1, s2, s3].
         """
         # s[0]=Mercury, s[1]=Krypton, s[2]=Nobelium
-        
+        # TODO randomize planet order
         # Planet 1: 50 + 15*s1 - 15*s2 [cite: 131]
         mu_1 = 50 + 15 * s[0] - 15 * s[1]
         
