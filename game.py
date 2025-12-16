@@ -9,12 +9,12 @@ class MiningInSpaceGame:
         
         self.context_names = ["Mercury", "Krypton", "Nobelium"]
         
-        # DEFINITION OF LOGIC LABELS
+        # DEFINITION OF Planet LABELS
         # 0 -> A: Mercury/Krypton
         # 1 -> B: Krypton/Nobelium
         # 2 -> C: Nobelium/Mercury
         # 3 -> D: Safe (Constant)
-        self.logic_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
+        self.planet_labels = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
         
         # Randomize the buttons ONCE
         self.arm_permutation = np.random.permutation(4)
@@ -30,10 +30,10 @@ class MiningInSpaceGame:
 
     def _calculate_expected_rewards(self, s):
         # Calculate canonical means (0-3)
-        mu_0 = 50 + 15 * s[0] - 15 * s[1] # Logic A
-        mu_1 = 50 + 15 * s[1] - 15 * s[2] # Logic B
-        mu_2 = 50 + 15 * s[2] - 15 * s[0] # Logic C
-        mu_3 = 50                         # Logic D
+        mu_0 = 50 + 15 * s[0] - 15 * s[1] # Planet A
+        mu_1 = 50 + 15 * s[1] - 15 * s[2] # Planet B
+        mu_2 = 50 + 15 * s[2] - 15 * s[0] # Planet C
+        mu_3 = 50                         # Planet D
         
         canonical_means = [mu_0, mu_1, mu_2, mu_3]
         
@@ -52,14 +52,14 @@ class MiningInSpaceGame:
         
         # --- LOGGING THE LABELS INTERNALLY ---
         canonical_idx = self.arm_permutation[arm_choice] # 0-3
-        canonical_lbl = self.logic_labels[canonical_idx] # A-D
+        canonical_lbl = self.planet_labels[canonical_idx] # A-D
         
         self.history.append({
             "trial": self.current_trial + 1,
             "context": self.current_context.copy(),
             "arm_choice_index": arm_choice,           # Physical button (0-3)
-            "canonical_logic_index": canonical_idx,   # Math index (0-3)
-            "canonical_logic_label": canonical_lbl,   # Label (A-D) <-- SAVED HERE
+            "canonical_planet_index": canonical_idx,   # Math index (0-3)
+            "canonical_planet_label": canonical_lbl,   # Label (A-D) <-- SAVED HERE
             "reward": reward,
             "optimal_choice": np.argmax(means),
             "latent_rewards": potential_rewards,

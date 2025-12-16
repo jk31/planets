@@ -73,10 +73,11 @@ class LinearRegressionAgent:
     Base Contextual Model using Recursive Least Squares.
     Reference: [cite: 64-71]
     """
-    def __init__(self, n_arms=4, n_features=3, pseudo_observations=True):
+    def __init__(self, n_arms=4, n_features=3, pseudo_observations=False, regularization=100):
         self.n_arms = n_arms
         self.n_features = n_features + 1 # +1 for intercept
         self.pseudo_observations = pseudo_observations
+        self.regularization = regularization
         
         # Storage for RLS matrices
         self.A_inv = [] 
@@ -93,7 +94,7 @@ class LinearRegressionAgent:
             # Standard RLS initialization:
             # A_inv = (1/delta) * I.  delta is small ridge factor.
             # TODO: try out different delta values.
-            current_A_inv = np.eye(self.n_features) * 1000
+            current_A_inv = np.eye(self.n_features) * self.regularization
             current_b = np.zeros(self.n_features)
             
             # Generate 10 pseudo-observations
@@ -187,6 +188,37 @@ class LinearRegressionAgent:
                 "upper": mu + (k * sigma)
             })
         return results
+    
+    def get_feature_weights(self, feature_names=None):
+        """
+        Returns a human-readable dictionary of the current weights (betas) for every arm.
+        
+        Args:
+            feature_names (list, optional): List of strings for feature names (e.g., ['Price', 'Color', 'Size']). 
+                                            If None, defaults to ['Feat_1', 'Feat_2', ...].
+        """
+        # Default naming if none provided
+        if feature_names is None:
+            # -1 because the first weight is always the Intercept
+            feature_names = [f"Feat_{i+1}" for i in range(self.n_features - 1)]
+            
+        weight_report = {}
+        
+        for arm_idx in range(self.n_arms):
+            # Calculate beta = A_inv @ b
+            weights = self.get_arm_params(arm_idx)
+            
+            # Map weights to names
+            # The first weight is always the Intercept (bias)
+            arm_data = {"Intercept": weights[0]}
+            
+            # Map the rest to the provided feature names
+            for name, w in zip(feature_names, weights[1:]):
+                arm_data[name] = w
+                
+            weight_report[f"Arm_{arm_idx}"] = arm_data
+            
+        return weight_report
 
 
 class LinearUCBAgent(LinearRegressionAgent):

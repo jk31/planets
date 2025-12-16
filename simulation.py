@@ -17,7 +17,7 @@ def run_single_game(agent_class, game_class, n_trials=150):
         reward, done, info = game.step(arm_idx)
         agent.update(context, arm_idx, reward)
         
-        # 3. Logging
+        # 3. Logging Standard Data
         game_log = game.history[-1]
         
         record = {
@@ -26,7 +26,7 @@ def run_single_game(agent_class, game_class, n_trials=150):
             
             # Decisions
             "choice_arm_index": arm_idx,
-            "choice_logic_label": game_log["canonical_logic_label"], # A, B, C, or D
+            "choice_planet_label": game_log["canonical_planet_label"], 
             "is_optimal": 1 if arm_idx == game_log["optimal_choice"] else 0,
             
             # Context
@@ -36,16 +36,29 @@ def run_single_game(agent_class, game_class, n_trials=150):
             "reward_received": reward,
         }
 
-        # Save Mapping (e.g. Arm 0 -> 'D')
-        for i, logic_id in enumerate(game_log["arm_permutation"]):
-            record[f"mapping_arm_{i}"] = game.logic_labels[logic_id]
+        # --- NEW: SAVE EVOLVING WEIGHTS ---
+        # We use the helper function from the previous step
+        # Note: We pass the specific context names from your Game class
+        current_weights = agent.get_feature_weights(feature_names=["Mercury", "Krypton", "Nobelium"])
+        
+        for arm_i in range(game.planet_labels.__len__()): # Loop over 4 arms
+            w_data = current_weights[f"Arm_{arm_i}"]
+            
+            # Flatten the dictionary for the CSV/DataFrame
+            record[f"w_intercept_arm_{arm_i}"] = w_data["Intercept"]
+            record[f"w_mercury_arm_{arm_i}"]   = w_data["Mercury"]
+            record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
+            record[f"w_nobelium_arm_{arm_i}"]  = w_data["Nobelium"]
+        # ----------------------------------
 
-        # --- SAVE AGENT BELIEFS (RESTORED) ---
+        # Save Mapping (e.g. Arm 0 -> 'D')
+        for i, planet_id in enumerate(game_log["arm_permutation"]):
+            record[f"mapping_arm_{i}"] = game.planet_labels[planet_id]
+
+        # Save Agent Uncertainty stats
         for i, data in enumerate(recs):
-            record[f"agent_mu_{i}"]    = data['mean']
-            record[f"agent_sigma_{i}"] = data['sigma']
-            record[f"agent_lower_{i}"] = data['lower'] # Restored
-            record[f"agent_upper_{i}"] = data['upper'] # Restored
+            record[f"agent_mu_{i}"]     = data['mean']
+            record[f"agent_sigma_{i}"]  = data['sigma']
             
         full_simulation_log.append(record)
         if done: break
