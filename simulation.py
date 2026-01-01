@@ -39,16 +39,18 @@ def run_single_game(agent_class, game_class, n_trials=150):
         # --- NEW: SAVE EVOLVING WEIGHTS ---
         # We use the helper function from the previous step
         # Note: We pass the specific context names from your Game class
-        current_weights = agent.get_feature_weights(feature_names=["Mercury", "Krypton", "Nobelium"])
-        
-        for arm_i in range(game.planet_labels.__len__()): # Loop over 4 arms
-            w_data = current_weights[f"Arm_{arm_i}"]
-            
-            # Flatten the dictionary for the CSV/DataFrame
-            record[f"w_intercept_arm_{arm_i}"] = w_data["Intercept"]
-            record[f"w_mercury_arm_{arm_i}"]   = w_data["Mercury"]
-            record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
-            record[f"w_nobelium_arm_{arm_i}"]  = w_data["Nobelium"]
+        # Only save weights if the agent has the get_feature_weights method
+        if hasattr(agent, 'get_feature_weights'):
+            current_weights = agent.get_feature_weights(feature_names=["Mercury", "Krypton", "Nobelium"])
+
+            for arm_i in range(game.planet_labels.__len__()): # Loop over 4 arms
+                w_data = current_weights[f"Arm_{arm_i}"]
+
+                # Flatten the dictionary for the CSV/DataFrame
+                record[f"w_intercept_arm_{arm_i}"] = w_data["Intercept"]
+                record[f"w_mercury_arm_{arm_i}"]   = w_data["Mercury"]
+                record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
+                record[f"w_nobelium_arm_{arm_i}"]  = w_data["Nobelium"]
         # ----------------------------------
 
         # Save Mapping (e.g. Arm 0 -> 'D')

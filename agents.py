@@ -57,8 +57,8 @@ class MeanTrackingAgent:
         for arm in range(self.n_arms):
             # For MeanTracking, use self.estimates[arm] instead of 50.0
             # For Random, just use 50.0 or 0.0
-            est = 50.0 
-            
+            est = self.estimates[arm]
+
             results.append({
                 "mean": est,
                 "sigma": np.nan,

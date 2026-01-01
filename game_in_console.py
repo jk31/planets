@@ -18,7 +18,7 @@ def play_console_game():
         
         # Display Context (The key to the puzzle)
         ctx_display = [
-            f"{name}: {'+' if val else '-'}" 
+            f"{name}: {'+' if val == 1 else '-'}"
             for name, val in zip(game.context_names, game.current_context)
         ]
         print(f"CURRENT GALAXY STATE: { ' | '.join(ctx_display) }")
