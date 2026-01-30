@@ -54,8 +54,8 @@ def run_single_game(agent_class, game_class, n_trials=100):
 
         # 6. Save Agent Uncertainty stats
         for i, data in enumerate(recs):
-            record[f"agent_mu_{i}"]     = data['mean']
-            record[f"agent_sigma_{i}"]  = data['sigma']
+            record[f"agent_mu_arm_{i}"]     = data['mean']
+            record[f"agent_sigma_arm_{i}"]  = data['sigma']
             
         full_simulation_log.append(record)
         if done: break
@@ -63,7 +63,7 @@ def run_single_game(agent_class, game_class, n_trials=100):
     return pd.DataFrame(full_simulation_log)
 
 
-def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=100, output_path=None):
+def run_batch_simulation(agent_classes, game_class, n_simulations=50, n_trials=100, output_path=None):
     """
     Runs the simulation for multiple agents and multiple repetitions.
     """
@@ -94,8 +94,8 @@ if __name__ == "__main__":
     from agents import LinearUCBAgent, LinearThompsonAgent
 
     parser = argparse.ArgumentParser(description="Run Mining in Space simulations.")
-    parser.add_argument("--n_simulations", type=int, default=10, help="Number of simulations per agent")
-    parser.add_argument("--n_trials", type=int, default=150, help="Number of trials per simulation")
+    parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per agent")
+    parser.add_argument("--n_trials", type=int, default=100, help="Number of trials per simulation")
     parser.add_argument("--output", type=str, default="simulation_results.csv", help="Path to save results")
     args = parser.parse_args()
 

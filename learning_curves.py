@@ -23,8 +23,8 @@ else:
     results = run_batch_simulation(
         agents_to_test, 
         MiningInSpaceGame, 
-        n_simulations=10, 
-        n_trials=150, 
+        n_simulations=50, 
+        n_trials=100, 
         output_path=DATA_FILE
     )
 
