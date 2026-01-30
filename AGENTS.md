@@ -1,6 +1,6 @@
 # Agent Guide
 
-This project simulates a 4-armed contextual bandit game ("Mining in Space") with several learning agents. Context features are three binary signals — Mercury, Krypton, Nobelium — and arms correspond to planets A-D (permuted each game). All agents share a minimal interface:
+This project simulates a 4-armed contextual bandit game ("Mining in Space") with several learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). All agents share a minimal interface:
 
 - `select_arm(context) -> int` picks an arm index 0-3.
 - `update(context, arm, reward)` incorporates the observed reward.
@@ -11,7 +11,7 @@ This project simulates a 4-armed contextual bandit game ("Mining in Space") with
 - **MeanTrackingAgent** (`agents.py`): Tracks per-arm sample means with an incremental update; action probabilities use softmax over estimates with temperature `gamma` (default 0.1). Recommendations currently return a placeholder mean (50) rather than the tracked estimate.
 
 ## Linear contextual agents (Recursive Least Squares)
-Defined in `LinearRegressionAgent` (`agents.py`), extended by UCB/Thompson variants. Adds an intercept to the 3-feature context (shape 4). Maintains `A_inv` (precision) and `b` per arm; updates via Sherman-Morrison. Prediction returns `(mean, sigma)` where `sigma` comes from `xᵀ A_inv x`.
+Defined in `LinearRegressionAgent` (`agents.py`), extended by UCB/Thompson variants. Adds an intercept to the 3-feature context (shape 4). Maintains `A_inv` (precision) and `b` per arm; updates via Sherman-Morrison. Prediction returns `(mean, sigma)` where `sigma` comes from `x^T A_inv x`.
 
 Key parameters:
 - `n_features=3` (context dims), `regularization=100`.
@@ -25,8 +25,8 @@ Concrete agents:
 ## Gaussian Process contextual agents
 Base **GaussianProcessAgent** (`agents.py`) models each arm with an RBF kernel:
 - Hyperparameters: `lengthscale=2.0`, `noise_std=5.0`, `signal_std=20.0`.
-- Data storage: `X[arm]`, `y[arm]` lists. Pseudo-observation loop currently short-circuits, so GPs start empty; when no data are present, predictions fall back to mean 50 with variance `signal_std^2`.
-- Prediction centers rewards around 50 before GP solve, then adds 50 back.
+- Data storage: `X[arm]`, `y[arm]` lists. The pseudo-observation loop currently short-circuits, so GPs start empty; when no data are present, predictions fall back to mean 50 with variance `signal_std^2`.
+- Prediction centers rewards around 50 before the GP solve, then adds 50 back.
 
 Concrete agents:
 - **GPUCBAgent**: Chooses `argmax(mu + 1.96*sigma)`.
