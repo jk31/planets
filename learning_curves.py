@@ -1,3 +1,5 @@
+import os
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from simulation import run_batch_simulation
@@ -5,15 +7,26 @@ from game import MiningInSpaceGame
 from agents import LinearUCBAgent, LinearThompsonAgent
 
 # 1. Setup and Run Simulation
+DATA_FILE = "simulation_results.csv"
 reg_values = [1, 10, 100, 1000]
-agents_to_test = {}
 
-for reg in reg_values:
-    agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
-    agents_to_test[f"TS (reg={reg})"] = lambda r=reg: LinearThompsonAgent(regularization=r)
+if os.path.exists(DATA_FILE):
+    print(f"Loading existing simulation data from {DATA_FILE}...")
+    results = pd.read_csv(DATA_FILE)
+else:
+    agents_to_test = {}
+    for reg in reg_values:
+        agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
+        agents_to_test[f"TS (reg={reg})"] = lambda r=reg: LinearThompsonAgent(regularization=r)
 
-print(f"Running simulation for {len(agents_to_test)} agent configurations...")
-results = run_batch_simulation(agents_to_test, MiningInSpaceGame, n_simulations=10, n_trials=150)
+    print(f"Running simulation for {len(agents_to_test)} agent configurations...")
+    results = run_batch_simulation(
+        agents_to_test, 
+        MiningInSpaceGame, 
+        n_simulations=10, 
+        n_trials=150, 
+        output_path=DATA_FILE
+    )
 
 # 2. Process Data
 # Calculate means across simulations for each (agent_name, trial)
@@ -65,7 +78,7 @@ for ax in axes:
     ax.grid(True, alpha=0.3)
 
 plt.suptitle('Comparison of Regularization Terms (No CI)', fontsize=16)
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.tight_layout(rect=(0, 0.03, 1, 0.95))
 plt.savefig('regularization_sweep.pdf')
 
 print("Plot saved to regularization_sweep.pdf")

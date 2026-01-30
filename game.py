@@ -1,7 +1,7 @@
 import numpy as np
 
 class MiningInSpaceGame:
-    def __init__(self, n_trials=150):
+    def __init__(self, n_trials=100):
         self.n_trials = n_trials
         self.current_trial = 0
         self.total_score = 0

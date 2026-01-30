@@ -1,6 +1,6 @@
 import pandas as pd
 
-def run_single_game(agent_class, game_class, n_trials=150):
+def run_single_game(agent_class, game_class, n_trials=100):
     game = game_class(n_trials=n_trials)
     agent = agent_class() 
     
@@ -63,7 +63,7 @@ def run_single_game(agent_class, game_class, n_trials=150):
     return pd.DataFrame(full_simulation_log)
 
 
-def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=150):
+def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=100, output_path=None):
     """
     Runs the simulation for multiple agents and multiple repetitions.
     """
@@ -80,4 +80,36 @@ def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=1
             
             all_results.append(df)
             
-    return pd.concat(all_results, ignore_index=True)
+    final_df = pd.concat(all_results, ignore_index=True)
+    
+    if output_path:
+        final_df.to_csv(output_path, index=False)
+        print(f"Results saved to {output_path}")
+        
+    return final_df
+
+if __name__ == "__main__":
+    import argparse
+    from game import MiningInSpaceGame
+    from agents import LinearUCBAgent, LinearThompsonAgent
+
+    parser = argparse.ArgumentParser(description="Run Mining in Space simulations.")
+    parser.add_argument("--n_simulations", type=int, default=10, help="Number of simulations per agent")
+    parser.add_argument("--n_trials", type=int, default=150, help="Number of trials per simulation")
+    parser.add_argument("--output", type=str, default="simulation_results.csv", help="Path to save results")
+    args = parser.parse_args()
+
+    # Define a standard suite of agents for CLI usage
+    reg_values = [1, 10, 100, 1000]
+    agents_to_test = {}
+    for reg in reg_values:
+        agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
+        agents_to_test[f"TS (reg={reg})"] = lambda r=reg: LinearThompsonAgent(regularization=r)
+
+    run_batch_simulation(
+        agents_to_test, 
+        MiningInSpaceGame, 
+        n_simulations=args.n_simulations, 
+        n_trials=args.n_trials, 
+        output_path=args.output
+    )

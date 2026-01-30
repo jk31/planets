@@ -22,10 +22,11 @@ Concrete agents:
 - Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
 
 ## How agents are used in the repo
-- Simulation entrypoints: `run_single_game` / `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, and current weights plus agent uncertainties.
-- Experiment script: `learning_curves.py` defines an `agents_to_test` dict and generates `regularization_sweep.pdf`.
-- Development: `testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
-- Manual play: `game_in_console.py` lets a human choose arms in the console.
+- **Simulation CLI**: Run `python simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `simulation_results.csv`.
+- **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, and current weights plus agent uncertainties.
+- **Experiment script**: `learning_curves.py` defines an `agents_to_test` dict, loads/saves to `simulation_results.csv`, and generates `regularization_sweep.pdf`.
+- **Development**: `testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
+- **Manual play**: `game_in_console.py` lets a human choose arms in the console.
 
 ## Adding or tweaking agents
 - Derive from `LinearRegressionAgent` to reuse prediction/uncertainty helpers.
