@@ -1,0 +1,89 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+
+def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", output_file="weight_evolution.png"):
+    df = pd.read_csv(csv_path)
+    
+    # Filter for the specific agent
+    agent_df = df[df['agent_name'] == agent_name_to_plot].copy()
+    
+    if agent_df.empty:
+        print(f"No data found for agent: {agent_name_to_plot}")
+        return
+
+    # Ground Truth Weights
+    ground_truth = {
+        'A': {'Intercept': 50, 'Mercury': 15, 'Krypton': -15, 'Nobelium': 0},
+        'B': {'Intercept': 50, 'Mercury': 0, 'Krypton': 15, 'Nobelium': -15},
+        'C': {'Intercept': 50, 'Mercury': -15, 'Krypton': 0, 'Nobelium': 15},
+        'D': {'Intercept': 50, 'Mercury': 0, 'Krypton': 0, 'Nobelium': 0}
+    }
+
+    features = ['Intercept', 'Mercury', 'Krypton', 'Nobelium']
+    planets = ['A', 'B', 'C', 'D']
+    
+    # We need to remap weights from arm-indexed to planet-labeled
+    # Columns: w_intercept_arm_0, mapping_arm_0, etc.
+    
+    planet_data = []
+    
+    # Group by trial and simulation to avoid row-by-row iteration which is slow
+    # but since it's only 100 trials * 50 sims = 5000 rows, it's fine.
+    for _, row in agent_df.iterrows():
+        trial = row['trial']
+        sim_id = row['simulation_id']
+        
+        # For each arm, find which planet it was mapped to and record its weights
+        for arm_i in range(4):
+            planet_label = row[f'mapping_arm_{arm_i}']
+            record = {
+                'trial': trial,
+                'sim_id': sim_id,
+                'planet': planet_label
+            }
+            for feat in features:
+                col_name = f"w_{feat.lower()}_arm_{arm_i}"
+                record[feat] = row[col_name]
+            planet_data.append(record)
+            
+    remapped_df = pd.DataFrame(planet_data)
+    
+    # Average weights across simulations for each (planet, trial)
+    avg_weights = remapped_df.groupby(['planet', 'trial'])[features].mean().reset_index()
+    
+    # Create Plots
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10), sharex=True, sharey=True)
+    axes = axes.flatten()
+    
+    colors = {'Intercept': 'black', 'Mercury': 'red', 'Krypton': 'green', 'Nobelium': 'blue'}
+    
+    for i, planet in enumerate(planets):
+        ax = axes[i]
+        p_df = avg_weights[avg_weights['planet'] == planet]
+        
+        for feat in features:
+            ax.plot(p_df['trial'], p_df[feat], label=feat, color=colors[feat], linewidth=2)
+            # Add ground truth line
+            gt_val = ground_truth[planet][feat]
+            ax.axhline(y=gt_val, color=colors[feat], linestyle='--', alpha=0.5)
+            
+        ax.set_title(f"Planet {planet} Weights Evolution")
+        ax.grid(True, alpha=0.3)
+        if i >= 2:
+            ax.set_xlabel("Trial")
+        if i % 2 == 0:
+            ax.set_ylabel("Weight Value")
+            
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(1, 0.95))
+    
+    plt.suptitle(f"Weight Evolution vs Ground Truth: {agent_name_to_plot}\n(Dashed lines = Ground Truth)", fontsize=16)
+    plt.tight_layout(rect=(0, 0, 0.92, 0.95))
+    
+    plt.savefig(output_file)
+    print(f"Visualization saved to {output_file}")
+
+if __name__ == "__main__":
+    visualize_weight_evolution("simulation_results.csv", "UCB (reg=100)", "weight_evolution_ucb.pdf")
+    visualize_weight_evolution("simulation_results.csv", "TS (reg=100)", "weight_evolution_ts.pdf")

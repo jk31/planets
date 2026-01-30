@@ -25,6 +25,7 @@ Concrete agents:
 - **Simulation CLI**: Run `python simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `simulation_results.csv`.
 - **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
 - **Experiment script**: `learning_curves.py` defines an `agents_to_test` dict, loads/saves to `simulation_results.csv`, and generates `regularization_sweep.pdf`.
+- **Weight Visualization**: `visualize_weights.py` processes simulation results to show how agent weights converge to ground truth. Generates `weight_evolution_ucb.pdf` and `weight_evolution_ts.pdf`.
 - **Development**: `testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
 - **Manual play**: `game_in_console.py` lets a human choose arms in the console.
 
