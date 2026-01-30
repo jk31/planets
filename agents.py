@@ -129,12 +129,16 @@ class LinearUCBAgent(LinearRegressionAgent):
     Linear Regression with UCB.
     Reference: Algorithm 1 [cite: 105]
     """
+    def __init__(self, n_arms=4, n_features=3, regularization=100, exploration_multiplier=1.96):
+        super().__init__(n_arms, n_features, regularization)
+        self.exploration_multiplier = exploration_multiplier
+
     def select_arm(self, context):
         ucb_values = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
             # Paper uses 1.96 for 95% CI [cite: 106]
-            ucb = mu + 1.96 * sigma
+            ucb = mu + self.exploration_multiplier * sigma
             ucb_values.append(ucb)
             
         # Algorithm 1: Choose argmax

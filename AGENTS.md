@@ -17,7 +17,7 @@ Key parameters:
 - `regularization` (default 100): Controls initial uncertainty. Higher values mean higher initial variance.
 
 Concrete agents:
-- **LinearUCBAgent**: Picks `argmax(mu + 1.96*sigma)` (UCB with 95% multiplier).
+- **LinearUCBAgent**: Picks `argmax(mu + k*sigma)`. The `exploration_multiplier` (k) defaults to 1.96 but is configurable via `__init__`.
 - **LinearThompsonAgent**: Samples `y* ~ N(mu, sigma)` per arm and picks the argmax (Thompson sampling).
 - Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
 
@@ -25,6 +25,9 @@ Concrete agents:
 - **Simulation CLI**: Run `python simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `simulation_results.csv`.
 - **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
 - **Experiment script**: `learning_curves.py` defines an `agents_to_test` dict, loads/saves to `simulation_results.csv`, and generates `regularization_sweep.pdf`.
+- **UCB Parameter Sweeps**: 
+    - `ucb_sweep.py`: Tests the impact of varying the `exploration_multiplier` (k) for a fixed regularization. Generates `ucb_multiplier_sweep.pdf`.
+    - `ucb_grid_search.py`: Performs a full grid search across `regularization` and `exploration_multiplier` (k) values. Generates a heatmap and faceted learning curves in `ucb_grid_search.pdf`.
 - **Weight Visualization**: `visualize_weights.py` processes simulation results to show how agent weights converge to ground truth. Generates `weight_evolution_ucb.pdf` and `weight_evolution_ts.pdf`.
 - **Development**: `testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
 - **Manual play**: `game_in_console.py` lets a human choose arms in the console.
