@@ -1,5 +1,8 @@
 # Agent Guide
 
+- Windows Environment
+- Use python venv\scripts\activate
+
 This project simulates a 4-armed contextual bandit game ("Mining in Space") with several learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). All agents share a minimal interface:
 
 - `select_arm(context) -> int` picks an arm index 0-3.
