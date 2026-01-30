@@ -23,8 +23,11 @@ Concrete agents:
 
 ## How agents are used in the repo
 - **Simulation CLI**: Run `python simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
 - **Experiment script**: `learning_curves.py` defines an `agents_to_test` dict, loads/saves to `simulation_results.csv`, and generates `regularization_sweep.pdf`.
+- **Exploration Analysis**: 
+    - `exploration_analysis.py`: Visualizes exploration rates over time for UCB and Thompson Sampling across different regularization values. Generates `exploration_rates.pdf`.
+    - `ucb_exploration_rate.py`: Specifically analyzes the impact of the exploration multiplier (k) on the UCB exploration rate. Generates `ucb_exploration_rate.pdf`.
 - **UCB Parameter Sweeps**: 
     - `ucb_sweep.py`: Tests the impact of varying the `exploration_multiplier` (k) for a fixed regularization. Generates `ucb_multiplier_sweep.pdf`.
     - `ucb_grid_search.py`: Performs a full grid search across `regularization` and `exploration_multiplier` (k) values. Generates a heatmap and faceted learning curves in `ucb_grid_search.pdf`.
