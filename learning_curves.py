@@ -2,78 +2,70 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from simulation import run_batch_simulation
 from game import MiningInSpaceGame
-from agents import (RandomAgent, MeanTrackingAgent, LinearUCBAgent, 
-                    LinearThompsonAgent, GPUCBAgent, GPThompsonAgent)
+from agents import LinearUCBAgent, LinearThompsonAgent
 
 # 1. Setup and Run Simulation
-agents_to_test = {
-    "Random": RandomAgent,
-    "MeanTracker": MeanTrackingAgent,
-    # "Linear-UCB": LinearUCBAgent,
-    # "Linear-Thompson": LinearThompsonAgent,
-    "Linear-UCB-No-Pseudo": lambda: LinearUCBAgent(pseudo_observations=False),
-    "Linear-Thompson-No-Pseudo": lambda: LinearThompsonAgent(pseudo_observations=False),
-    "Gaussian-UCB": GPUCBAgent,
-    "Gaussian-Thompson": GPThompsonAgent
-}
+reg_values = [1, 10, 100, 1000]
+agents_to_test = {}
 
-print("Running simulation... this may take a minute.")
+for reg in reg_values:
+    agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
+    agents_to_test[f"TS (reg={reg})"] = lambda r=reg: LinearThompsonAgent(regularization=r)
+
+print(f"Running simulation for {len(agents_to_test)} agent configurations...")
 results = run_batch_simulation(agents_to_test, MiningInSpaceGame, n_simulations=10, n_trials=150)
 
-# 2. Process Data for Plotting (First Graph)
-# Average reward at each trial number for the combined plot
-learning_curves = results.groupby(['agent_name', 'trial'])['reward'].mean().reset_index()
+# 2. Process Data
+# Calculate means across simulations for each (agent_name, trial)
+plot_data = results.groupby(['agent_name', 'trial'])['reward_received'].mean().reset_index()
 
-# ---------------------------------------------------------
-# Graph 1: Combined Learning Curves (Averages Only)
-# ---------------------------------------------------------
-plt.figure(figsize=(12, 7))
+# Extract Algorithm and Regularization for plotting
+plot_data['algorithm'] = plot_data['agent_name'].apply(lambda x: 'UCB' if 'UCB' in x else 'Thompson')
+plot_data['reg_val'] = plot_data['agent_name'].str.extract(r'reg=(\d+)').astype(int)
+
+# 3. Create Plots
+fig, axes = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
+
+# Colors for different regularization terms
+palette = sns.color_palette("viridis", n_colors=len(reg_values))
+
+# Plot UCB
 sns.lineplot(
-    data=learning_curves, 
-    x='trial', 
-    y='reward', 
-    hue='agent_name',
-    linewidth=2
-)
-
-plt.axhline(y=50, color='gray', linestyle='--', label='Chance Level (50)')
-plt.title('Agent Learning Curves: Average Score per Trial', fontsize=16)
-plt.xlabel('Trial Number', fontsize=12)
-plt.ylabel('Average Reward', fontsize=12)
-plt.legend(title='Agent Strategy')
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.savefig('learning_curves.pdf')
-plt.show()
-
-# ---------------------------------------------------------
-# Graph 2: Individual Agents with Confidence Intervals
-# ---------------------------------------------------------
-# We use the raw 'results' dataframe here. 
-# Seaborn automatically aggregates the 'n_simulations' to show the 
-# mean (solid line) and the 95% confidence interval (shaded area).
-
-g = sns.relplot(
-    data=results,
-    x='trial', 
-    y='reward', 
-    col='agent_name', 
-    col_wrap=3,           # Arranges plots in a grid of 3 columns
-    kind='line',          # Line plot type
-    height=4, 
-    aspect=1.5,
+    data=plot_data[plot_data['algorithm'] == 'UCB'],
+    x='trial',
+    y='reward_received',
+    hue='reg_val',
+    ax=axes[0],
+    palette=palette,
     linewidth=2,
-    errorbar=('ci', 95)                 # 95% Confidence Interval (default)
+    errorbar=None
 )
+axes[0].set_title('Linear UCB Performance', fontsize=14)
+axes[0].set_ylabel('Average Reward')
+axes[0].legend(title='Regularization')
 
-# Add reference lines and styling to each subplot
-for ax in g.axes.flat:
-    ax.axhline(y=50, color='gray', linestyle='--', label='Chance Level')
+# Plot Thompson Sampling
+sns.lineplot(
+    data=plot_data[plot_data['algorithm'] == 'Thompson'],
+    x='trial',
+    y='reward_received',
+    hue='reg_val',
+    ax=axes[1],
+    palette=palette,
+    linewidth=2,
+    errorbar=None
+)
+axes[1].set_title('Linear Thompson Sampling Performance', fontsize=14)
+axes[1].legend(title='Regularization')
+
+# Common styling
+for ax in axes:
+    ax.axhline(y=50, color='gray', linestyle='--', alpha=0.5)
+    ax.set_xlabel('Trial Number')
     ax.grid(True, alpha=0.3)
 
-# Adjust overall title and layout
-g.fig.suptitle('Individual Agent Performance (with 95% Confidence Intervals)', fontsize=16, y=1.02)
-g.set_axis_labels('Trial Number', 'Reward')
+plt.suptitle('Comparison of Regularization Terms (No CI)', fontsize=16)
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.savefig('regularization_sweep.pdf')
 
-plt.savefig('individual_agents_ci.pdf')
-plt.show()
+print("Plot saved to regularization_sweep.pdf")

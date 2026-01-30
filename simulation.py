@@ -36,12 +36,10 @@ def run_single_game(agent_class, game_class, n_trials=150):
             "reward_received": reward,
         }
 
-        # --- NEW: SAVE EVOLVING WEIGHTS ---
-        # We use the helper function from the previous step
-        # Note: We pass the specific context names from your Game class
+        # 4. Save Evolving Weights
         current_weights = agent.get_feature_weights(feature_names=["Mercury", "Krypton", "Nobelium"])
         
-        for arm_i in range(game.planet_labels.__len__()): # Loop over 4 arms
+        for arm_i in range(len(game.planet_labels)): # Loop over 4 arms
             w_data = current_weights[f"Arm_{arm_i}"]
             
             # Flatten the dictionary for the CSV/DataFrame
@@ -49,13 +47,12 @@ def run_single_game(agent_class, game_class, n_trials=150):
             record[f"w_mercury_arm_{arm_i}"]   = w_data["Mercury"]
             record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
             record[f"w_nobelium_arm_{arm_i}"]  = w_data["Nobelium"]
-        # ----------------------------------
 
-        # Save Mapping (e.g. Arm 0 -> 'D')
+        # 5. Save Mapping (e.g. Arm 0 -> 'D')
         for i, planet_id in enumerate(game_log["arm_permutation"]):
             record[f"mapping_arm_{i}"] = game.planet_labels[planet_id]
 
-        # Save Agent Uncertainty stats
+        # 6. Save Agent Uncertainty stats
         for i, data in enumerate(recs):
             record[f"agent_mu_{i}"]     = data['mean']
             record[f"agent_sigma_{i}"]  = data['sigma']
@@ -76,15 +73,11 @@ def run_batch_simulation(agent_classes, game_class, n_simulations=10, n_trials=1
         print(f"Simulating Agent: {agent_name} ({n_simulations} runs)...")
         
         for sim_id in range(n_simulations):
-            # Run one game
             df = run_single_game(agent_cls, game_class, n_trials)
             
-            # Add simulation metadata
             df['simulation_id'] = sim_id
             df['agent_name'] = agent_name
             
             all_results.append(df)
             
-    # Combine all into one big DataFrame
-    full_data = pd.concat(all_results, ignore_index=True)
-    return full_data
+    return pd.concat(all_results, ignore_index=True)
