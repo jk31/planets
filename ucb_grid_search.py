@@ -9,7 +9,7 @@ from agents import LinearUCBAgent
 # 1. Setup Experiment Grid
 DATA_FILE = "ucb_grid_results.csv"
 reg_values = [1, 10, 100, 1000]
-k_values = [0.0, 0.5, 2.0, 5.0]
+k_values = [0.0, 0.5, 1.96, 5.0, 10.0]
 
 if os.path.exists(DATA_FILE):
     print(f"Loading existing simulation data from {DATA_FILE}...")

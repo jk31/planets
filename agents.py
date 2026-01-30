@@ -13,6 +13,7 @@ class LinearRegressionAgent:
         # Storage for RLS matrices
         self.A_inv = [] 
         self.b = []      
+        self.counts = np.zeros(self.n_arms, dtype=int)
 
         for _ in range(n_arms):
             # Standard RLS initialization:
@@ -50,11 +51,12 @@ class LinearRegressionAgent:
         return mean, np.sqrt(variance)
 
     def select_arm(self, context):
-        """Placeholder for subclasses"""
-        return 0 
+        """Returns choice and info dict"""
+        return int(0), {} 
 
     def update(self, context, arm, reward):
         """Recursive Least Squares Update"""
+        self.counts[arm] += 1
         x = self._get_features(context)
         A_inv = self.A_inv[arm]
         
@@ -135,14 +137,25 @@ class LinearUCBAgent(LinearRegressionAgent):
 
     def select_arm(self, context):
         ucb_values = []
+        means = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
             # Paper uses 1.96 for 95% CI [cite: 106]
             ucb = mu + self.exploration_multiplier * sigma
             ucb_values.append(ucb)
+            means.append(mu)
             
         # Algorithm 1: Choose argmax
-        return np.argmax(ucb_values)
+        choice = np.argmax(ucb_values)
+        
+        # Classify as EXPLOIT or EXPLORE
+        max_mean = np.max(means)
+        is_top_arm = np.isclose(means[choice], max_mean)
+        has_been_sampled = self.counts[choice] > 0
+        
+        exploration = 0 if (is_top_arm and has_been_sampled) else 1
+        
+        return int(choice), {"exploration": exploration}
 
 
 class LinearThompsonAgent(LinearRegressionAgent):
@@ -152,11 +165,22 @@ class LinearThompsonAgent(LinearRegressionAgent):
     """
     def select_arm(self, context):
         sampled_values = []
+        means = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
             # Sample y* ~ N(mu, sigma)
             sample = np.random.normal(mu, sigma)
             sampled_values.append(sample)
+            means.append(mu)
             
         # Algorithm 2: Choose argmax
-        return np.argmax(sampled_values)
+        choice = np.argmax(sampled_values)
+        
+        # Classify as EXPLOIT or EXPLORE
+        max_mean = np.max(means)
+        is_top_arm = np.isclose(means[choice], max_mean)
+        has_been_sampled = self.counts[choice] > 0
+        
+        exploration = 0 if (is_top_arm and has_been_sampled) else 1
+        
+        return int(choice), {"exploration": exploration}

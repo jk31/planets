@@ -11,10 +11,10 @@ def run_single_game(agent_class, game_class, n_trials=100):
         
         # 1. Agent Decision & Beliefs
         recs = agent.get_recommendations(context, k=1.96)
-        arm_idx = agent.select_arm(context)
+        arm_idx, info = agent.select_arm(context)
         
         # 2. Game Step
-        reward, done, info = game.step(arm_idx)
+        reward, done, info_game = game.step(arm_idx)
         agent.update(context, arm_idx, reward)
         
         # 3. Logging Standard Data
@@ -28,6 +28,7 @@ def run_single_game(agent_class, game_class, n_trials=100):
             "choice_arm_index": arm_idx,
             "choice_planet_label": game_log["canonical_planet_label"], 
             "is_optimal": 1 if arm_idx == game_log["optimal_choice"] else 0,
+            "exploration": info.get("exploration", 1),
             
             # Context
             "context_mercury": context[0],
