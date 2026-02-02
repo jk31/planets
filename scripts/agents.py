@@ -135,24 +135,72 @@ class LinearUCBAgent(LinearRegressionAgent):
         super().__init__(n_arms, n_features, regularization)
         self.exploration_multiplier = exploration_multiplier
 
+    def _get_feature_names(self):
+        default_names = ["Mercury", "Krypton", "Nobelium"]
+        if self.n_features - 1 <= len(default_names):
+            return default_names[:self.n_features - 1]
+        return [f"Feature {i + 1}" for i in range(self.n_features - 1)]
+
+    def _get_active_uncertain_features(self, context, arm_idx, top_k=2):
+        x = self._get_features(context)
+        A_inv = self.A_inv[arm_idx]
+        feature_names = self._get_feature_names()
+        contributions = []
+
+        for i, name in enumerate(feature_names, start=1):
+            if context[i - 1] > 0:
+                contrib = (x[i] ** 2) * A_inv[i, i]
+                contributions.append((name, contrib))
+
+        contributions.sort(key=lambda item: item[1], reverse=True)
+        return [name for name, _ in contributions[:top_k]]
+
     def select_arm(self, context):
         ucb_values = []
         means = []
+        sigmas = []
         for arm in range(self.n_arms):
             mu, sigma = self.predict_with_uncertainty(context, arm)
             # Paper uses 1.96 for 95% CI [cite: 106]
             ucb = mu + self.exploration_multiplier * sigma
             ucb_values.append(ucb)
             means.append(mu)
+            sigmas.append(sigma)
             
         # Algorithm 1: Choose argmax
         choice = np.argmax(ucb_values)
-        
+
         # Classify as EXPLOIT or EXPLORE
         max_mean = np.max(means)
         is_top_arm = np.isclose(means[choice], max_mean)
         has_been_sampled = self.counts[choice] > 0
-        
+
         exploration = 0 if (is_top_arm and has_been_sampled) else 1
-        
-        return int(choice), {"exploration": exploration}
+
+        active_features = self._get_active_uncertain_features(context, choice, top_k=2)
+        if active_features:
+            context_phrase = f"active: {', '.join(active_features)}"
+        else:
+            context_phrase = "no active signals"
+
+        if exploration == 1:
+            if choice != int(np.argmax(means)):
+                reason = "uncertainty bonus lifts it above the best-mean arm"
+            else:
+                reason = "uncertainty is high for the current context"
+
+            explanation = f"Explore arm {choice + 1} because {reason}; {context_phrase}."
+        else:
+            reason = "highest predicted mean in this context"
+            explanation = f"Exploit arm {choice + 1} because {reason}; {context_phrase}."
+
+        return int(choice), {
+            "exploration": exploration,
+            "intent": "explore" if exploration == 1 else "exploit",
+            "intent_reason": reason,
+            "context_features": active_features,
+            "explanation": explanation,
+            "chosen_mean": means[choice],
+            "chosen_sigma": sigmas[choice],
+            "chosen_ucb": ucb_values[choice],
+        }

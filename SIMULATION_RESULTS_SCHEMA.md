@@ -26,6 +26,9 @@ This file describes the columns in `simulation_results.csv`, which records the t
 | `choice_planet_label` | The planet label (A-D) corresponding to the agent's choice. |
 | `is_optimal` | 1 if the selected arm was the one with the highest expected reward, 0 otherwise. |
 | `exploration` | 1 if the choice was an exploration step, 0 if exploitation. |
+| `intent` | The strategic intent of the agent: `explore` or `exploit`. |
+| `intent_reason` | A brief technical reason for the chosen intent. |
+| `explanation` | A human-readable narrative explaining the choice based on intent and context. |
 | `reward_received` | The numerical reward obtained from the selected arm. |
 
 ## Agent Internal State (Weights)

@@ -36,6 +36,9 @@ def run_single_game(agent_class, game_class, n_trials=100, agent_kwargs=None):
             "choice_planet_label": game_log["canonical_planet_label"], 
             "is_optimal": 1 if arm_idx == game_log["optimal_choice"] else 0,
             "exploration": info.get("exploration", 1),
+            "intent": info.get("intent", "explore"),
+            "intent_reason": info.get("intent_reason", ""),
+            "explanation": info.get("explanation", ""),
             
             # Context
             "context_mercury": context[0],
