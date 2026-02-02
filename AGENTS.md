@@ -27,19 +27,16 @@ Concrete agents:
 
 ## How agents are used in the repo
 - **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_batch_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
-- **Experiment script**: `scripts/learning_curves.py` defines an `agents_to_test` dict, loads/saves to `data/simulation_results.csv`, and generates `graphics/regularization_sweep.pdf`.
-- **Exploration Analysis**: 
-    - `scripts/exploration_analysis.py`: Visualizes exploration rates over time for UCB across different regularization values. Generates `graphics/exploration_rates.pdf`.
-    - `scripts/ucb_exploration_rate.py`: Specifically analyzes the impact of the exploration multiplier (k) on the UCB exploration rate. Generates `graphics/ucb_exploration_rate.pdf`.
-- **UCB Parameter Sweeps**: 
-    - `scripts/ucb_sweep.py`: Tests the impact of varying the `exploration_multiplier` (k) for a fixed regularization. Generates `graphics/ucb_multiplier_sweep.pdf`.
-    - `scripts/ucb_grid_search.py`: Performs a full grid search across `regularization` and `exploration_multiplier` (k) values. Generates a heatmap and faceted learning curves in `graphics/ucb_grid_search.pdf`.
-- **Weight Visualization**: `scripts/visualize_weights.py` processes simulation results to show how agent weights converge to ground truth. Generates `graphics/weight_evolution_ucb.pdf`.
+- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations, and run all analytical scripts.
+- **Consolidated Analysis**:
+    - `scripts/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/performance_analysis.pdf`.
+    - `scripts/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/exploration_analysis.pdf`.
+    - `scripts/analyze_weights.py`: Processes simulation results to show how agent weights converge to ground truth for each planet. Generates `graphics/weight_evolution_analysis.pdf`.
 - **Development**: `scripts/testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
 - **Manual play**: `scripts/game_in_console.py` lets a human choose arms in the console.
 
 ## Adding or tweaking agents
 - Derive from `LinearRegressionAgent` to reuse prediction/uncertainty helpers.
-- Expose tunable hyperparameters via `__init__` and add instances to the `agents_to_test` mapping in `scripts/learning_curves.py`.
+- Expose tunable hyperparameters via `__init__`.
 - Remember to update `get_recommendations` if you want UI/logs to reflect new belief calculations.

@@ -29,16 +29,25 @@ class MiningInSpaceGame:
             return ctx
 
     def _calculate_expected_rewards(self, s):
-        # Calculate canonical means (0-3)
-        mu_0 = 50 + 20 * s[0] - 10 * s[1] # Planet A
-        mu_1 = 50 + 20 * s[1] - 10 * s[2] # Planet B
-        mu_2 = 50 - 10 * s[0] + 20 * s[2] # Planet C
-        mu_3 = 50                         # Planet D
+        """
+        Calculates expected reward (mean) for each arm based on Equations 15-18 .
+        s represents the context vector [s1, s2, s3].
+        """
+        # s[0]=Mercury, s[1]=Krypton, s[2]=Nobelium
         
-        canonical_means = [mu_0, mu_1, mu_2, mu_3]
+        # Planet 1: 50 + 15*s1 - 15*s2 [cite: 131]
+        mu_1 = 50 + 15 * s[0] - 15 * s[1]
         
-        # Shuffle according to the game instance's random layout
-        return [canonical_means[i] for i in self.arm_permutation]
+        # Planet 2: 50 + 15*s2 - 15*s3 [cite: 132]
+        mu_2 = 50 + 15 * s[1] - 15 * s[2]
+        
+        # Planet 3: 50 + 15*s3 - 15*s1 [cite: 133]
+        mu_3 = 50 + 15 * s[2] - 15 * s[0]
+        
+        # Planet 4: 50 (Constant mean) 
+        mu_4 = 50
+        
+        return [mu_1, mu_2, mu_3, mu_4]
 
     def step(self, arm_choice):
         if self.current_trial >= self.n_trials:

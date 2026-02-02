@@ -15,7 +15,6 @@ if not os.path.exists(DATA_FILE):
 results = pd.read_csv(DATA_FILE)
 
 # 2. Process Data for Visualization
-# Calculate average reward per configuration
 grid_summary = results.groupby(['reg', 'k'])['reward_received'].mean().reset_index()
 
 # 3. Visualization
@@ -31,25 +30,33 @@ ax0.set_ylabel('Regularization')
 ax0.set_xlabel('Exploration Multiplier (k)')
 
 # --- Plot B: Faceted Learning Curves ---
-ax1 = fig.add_subplot(gs[1])
 learning_data = results.groupby(['reg', 'k', 'trial'])['reward_received'].mean().reset_index()
+reg_values = sorted(learning_data['reg'].unique())
+k_values = sorted(learning_data['k'].unique())
+palette_k = sns.color_palette("rocket_r", n_colors=len(k_values))
 
-sns.lineplot(
-    data=learning_data,
-    x='trial',
-    y='reward_received',
-    hue='k',
-    style='reg',
-    palette='viridis',
-    ax=ax1
-)
-ax1.set_title('Learning Curves: Grouped by k and Regularization', fontsize=14)
-ax1.set_ylabel('Average Reward')
-ax1.set_xlabel('Trial Number')
-ax1.legend(title='Parameters', bbox_to_anchor=(1.05, 1), loc='upper left')
-ax1.grid(True, alpha=0.3)
+gs_inner = gs[1].subgridspec(1, 4)
 
-plt.tight_layout()
-output_file = os.path.join(GRAPHICS_DIR, 'ucb_grid_search.pdf')
+for i, reg in enumerate(reg_values):
+    ax = fig.add_subplot(gs_inner[i])
+    subset = learning_data[learning_data['reg'] == reg]
+    sns.lineplot(
+        data=subset,
+        x='trial',
+        y='reward_received',
+        hue='k',
+        palette=palette_k,
+        ax=ax,
+        legend=(i == len(reg_values) - 1)
+    )
+    ax.set_title(f'Reg={reg}', fontsize=12)
+    ax.set_ylabel('Avg Reward' if i == 0 else '')
+    ax.set_xlabel('Trial Number')
+    ax.grid(True, alpha=0.3)
+    if i == len(reg_values) - 1:
+        ax.legend(title='k value', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+plt.suptitle('Consolidated Performance Analysis: Heatmap and Learning Curves', fontsize=16)
+output_file = os.path.join(GRAPHICS_DIR, 'performance_analysis.pdf')
 plt.savefig(output_file)
 print(f"Plots saved to {output_file}")
