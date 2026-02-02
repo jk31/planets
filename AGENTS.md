@@ -9,8 +9,13 @@ This project simulates a 4-armed contextual bandit game ("Mining in Space") with
 - `update(context, arm, reward)` incorporates the observed reward.
 - `get_recommendations(context, k=1.96)` returns per-arm means/uncertainties for logging or UI.
 
+## Project Structure
+- `scripts/`: Python scripts for simulation, analysis, and visualization.
+- `data/`: CSV files containing simulation results.
+- `graphics/`: PDF files of generated plots and visualizations.
+
 ## Linear contextual agents (Recursive Least Squares)
-Defined in `LinearRegressionAgent` (`agents.py`), extended by UCB/Thompson variants. Adds an intercept to the 3-feature context (shape 4). Maintains `A_inv` (precision) and `b` per arm; updates via Sherman-Morrison. Prediction returns `(mean, sigma)` where `sigma` comes from `x^T A_inv x`.
+Defined in `LinearRegressionAgent` (`scripts/agents.py`), extended by UCB/Thompson variants. Adds an intercept to the 3-feature context (shape 4). Maintains `A_inv` (precision) and `b` per arm; updates via Sherman-Morrison. Prediction returns `(mean, sigma)` where `sigma` comes from `x^T A_inv x`.
 
 Key parameters:
 - `n_features=3` (context dims).
@@ -22,20 +27,20 @@ Concrete agents:
 - Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
 
 ## How agents are used in the repo
-- **Simulation CLI**: Run `python simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_batch_simulation` in `simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
-- **Experiment script**: `learning_curves.py` defines an `agents_to_test` dict, loads/saves to `simulation_results.csv`, and generates `regularization_sweep.pdf`.
+- **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB and Thompson agents with varying regularization. Results are saved to `data/simulation_results.csv`.
+- **Simulation API**: `run_single_game` and `run_batch_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Experiment script**: `scripts/learning_curves.py` defines an `agents_to_test` dict, loads/saves to `data/simulation_results.csv`, and generates `graphics/regularization_sweep.pdf`.
 - **Exploration Analysis**: 
-    - `exploration_analysis.py`: Visualizes exploration rates over time for UCB and Thompson Sampling across different regularization values. Generates `exploration_rates.pdf`.
-    - `ucb_exploration_rate.py`: Specifically analyzes the impact of the exploration multiplier (k) on the UCB exploration rate. Generates `ucb_exploration_rate.pdf`.
+    - `scripts/exploration_analysis.py`: Visualizes exploration rates over time for UCB and Thompson Sampling across different regularization values. Generates `graphics/exploration_rates.pdf`.
+    - `scripts/ucb_exploration_rate.py`: Specifically analyzes the impact of the exploration multiplier (k) on the UCB exploration rate. Generates `graphics/ucb_exploration_rate.pdf`.
 - **UCB Parameter Sweeps**: 
-    - `ucb_sweep.py`: Tests the impact of varying the `exploration_multiplier` (k) for a fixed regularization. Generates `ucb_multiplier_sweep.pdf`.
-    - `ucb_grid_search.py`: Performs a full grid search across `regularization` and `exploration_multiplier` (k) values. Generates a heatmap and faceted learning curves in `ucb_grid_search.pdf`.
-- **Weight Visualization**: `visualize_weights.py` processes simulation results to show how agent weights converge to ground truth. Generates `weight_evolution_ucb.pdf` and `weight_evolution_ts.pdf`.
-- **Development**: `testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
-- **Manual play**: `game_in_console.py` lets a human choose arms in the console.
+    - `scripts/ucb_sweep.py`: Tests the impact of varying the `exploration_multiplier` (k) for a fixed regularization. Generates `graphics/ucb_multiplier_sweep.pdf`.
+    - `scripts/ucb_grid_search.py`: Performs a full grid search across `regularization` and `exploration_multiplier` (k) values. Generates a heatmap and faceted learning curves in `graphics/ucb_grid_search.pdf`.
+- **Weight Visualization**: `scripts/visualize_weights.py` processes simulation results to show how agent weights converge to ground truth. Generates `graphics/weight_evolution_ucb.pdf` and `graphics/weight_evolution_ts.pdf`.
+- **Development**: `scripts/testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
+- **Manual play**: `scripts/game_in_console.py` lets a human choose arms in the console.
 
 ## Adding or tweaking agents
 - Derive from `LinearRegressionAgent` to reuse prediction/uncertainty helpers.
-- Expose tunable hyperparameters via `__init__` and add instances to the `agents_to_test` mapping in `learning_curves.py`.
+- Expose tunable hyperparameters via `__init__` and add instances to the `agents_to_test` mapping in `scripts/learning_curves.py`.
 - Remember to update `get_recommendations` if you want UI/logs to reflect new belief calculations.
