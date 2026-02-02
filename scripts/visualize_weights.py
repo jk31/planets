@@ -15,9 +15,9 @@ def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", out
 
     # Ground Truth Weights
     ground_truth = {
-        'A': {'Intercept': 50, 'Mercury': 15, 'Krypton': -15, 'Nobelium': 0},
-        'B': {'Intercept': 50, 'Mercury': 0, 'Krypton': 15, 'Nobelium': -15},
-        'C': {'Intercept': 50, 'Mercury': -15, 'Krypton': 0, 'Nobelium': 15},
+        'A': {'Intercept': 50, 'Mercury': 20, 'Krypton': -10, 'Nobelium': 0},
+        'B': {'Intercept': 50, 'Mercury': 0, 'Krypton': 20, 'Nobelium': -10},
+        'C': {'Intercept': 50, 'Mercury': -10, 'Krypton': 0, 'Nobelium': 20},
         'D': {'Intercept': 50, 'Mercury': 0, 'Krypton': 0, 'Nobelium': 0}
     }
 
@@ -91,4 +91,3 @@ if __name__ == "__main__":
     GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
     
     visualize_weight_evolution(DATA_FILE, "UCB (reg=100)", os.path.join(GRAPHICS_DIR, "weight_evolution_ucb.pdf"))
-    visualize_weight_evolution(DATA_FILE, "TS (reg=100)", os.path.join(GRAPHICS_DIR, "weight_evolution_ts.pdf"))

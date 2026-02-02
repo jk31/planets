@@ -93,7 +93,7 @@ if __name__ == "__main__":
     import argparse
     import os
     from game import MiningInSpaceGame
-    from agents import LinearUCBAgent, LinearThompsonAgent
+    from agents import LinearUCBAgent
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
@@ -109,7 +109,6 @@ if __name__ == "__main__":
     agents_to_test = {}
     for reg in reg_values:
         agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
-        agents_to_test[f"TS (reg={reg})"] = lambda r=reg: LinearThompsonAgent(regularization=r)
 
     run_batch_simulation(
         agents_to_test, 

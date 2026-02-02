@@ -156,31 +156,3 @@ class LinearUCBAgent(LinearRegressionAgent):
         exploration = 0 if (is_top_arm and has_been_sampled) else 1
         
         return int(choice), {"exploration": exploration}
-
-
-class LinearThompsonAgent(LinearRegressionAgent):
-    """
-    Linear Regression with Thompson Sampling.
-    Reference: Algorithm 2 [cite: 115]
-    """
-    def select_arm(self, context):
-        sampled_values = []
-        means = []
-        for arm in range(self.n_arms):
-            mu, sigma = self.predict_with_uncertainty(context, arm)
-            # Sample y* ~ N(mu, sigma)
-            sample = np.random.normal(mu, sigma)
-            sampled_values.append(sample)
-            means.append(mu)
-            
-        # Algorithm 2: Choose argmax
-        choice = np.argmax(sampled_values)
-        
-        # Classify as EXPLOIT or EXPLORE
-        max_mean = np.max(means)
-        is_top_arm = np.isclose(means[choice], max_mean)
-        has_been_sampled = self.counts[choice] > 0
-        
-        exploration = 0 if (is_top_arm and has_been_sampled) else 1
-        
-        return int(choice), {"exploration": exploration}

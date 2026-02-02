@@ -30,9 +30,9 @@ class MiningInSpaceGame:
 
     def _calculate_expected_rewards(self, s):
         # Calculate canonical means (0-3)
-        mu_0 = 50 + 15 * s[0] - 15 * s[1] # Planet A
-        mu_1 = 50 + 15 * s[1] - 15 * s[2] # Planet B
-        mu_2 = 50 + 15 * s[2] - 15 * s[0] # Planet C
+        mu_0 = 50 + 20 * s[0] - 10 * s[1] # Planet A
+        mu_1 = 50 + 20 * s[1] - 10 * s[2] # Planet B
+        mu_2 = 50 - 10 * s[0] + 20 * s[2] # Planet C
         mu_3 = 50                         # Planet D
         
         canonical_means = [mu_0, mu_1, mu_2, mu_3]
