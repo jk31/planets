@@ -53,14 +53,15 @@ class MiningInSpaceGame:
         if self.current_trial >= self.n_trials:
             return 0, True, {"msg": "Game Over"}
 
-        means = self._calculate_expected_rewards(self.current_context)
+        canonical_means = self._calculate_expected_rewards(self.current_context)
+        physical_means = [canonical_means[int(self.arm_permutation[i])] for i in range(4)]
         noises = np.random.normal(loc=0, scale=5.0, size=4)
-        potential_rewards = [m + n for m, n in zip(means, noises)]
+        potential_rewards = [m + n for m, n in zip(physical_means, noises)]
         
         reward = potential_rewards[arm_choice]
         
         # --- LOGGING THE LABELS INTERNALLY ---
-        canonical_idx = self.arm_permutation[arm_choice] # 0-3
+        canonical_idx = int(self.arm_permutation[arm_choice]) # 0-3
         canonical_lbl = self.planet_labels[canonical_idx] # A-D
         
         self.history.append({
@@ -70,7 +71,7 @@ class MiningInSpaceGame:
             "canonical_planet_index": canonical_idx,   # Math index (0-3)
             "canonical_planet_label": canonical_lbl,   # Label (A-D) <-- SAVED HERE
             "reward": reward,
-            "optimal_choice": np.argmax(means),
+            "optimal_choice": np.argmax(physical_means),
             "latent_rewards": potential_rewards,
             "arm_permutation": self.arm_permutation.tolist()
         })

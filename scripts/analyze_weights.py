@@ -11,9 +11,9 @@ def visualize_weight_evolution(csv_path, output_file="weight_evolution_all.pdf")
     k_values = sorted(df['k'].unique())
     
     ground_truth = {
-        'A': {'Intercept': 50, 'Mercury': 20, 'Krypton': -10, 'Nobelium': 0},
-        'B': {'Intercept': 50, 'Mercury': 0, 'Krypton': 20, 'Nobelium': -10},
-        'C': {'Intercept': 50, 'Mercury': -10, 'Krypton': 0, 'Nobelium': 20},
+        'A': {'Intercept': 50, 'Mercury': 15, 'Krypton': -15, 'Nobelium': 0},
+        'B': {'Intercept': 50, 'Mercury': 0, 'Krypton': 15, 'Nobelium': -15},
+        'C': {'Intercept': 50, 'Mercury': -15, 'Krypton': 0, 'Nobelium': 15},
         'D': {'Intercept': 50, 'Mercury': 0, 'Krypton': 0, 'Nobelium': 0}
     }
 
