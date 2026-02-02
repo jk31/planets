@@ -7,7 +7,9 @@ from game import MiningInSpaceGame
 from agents import LinearUCBAgent
 
 # 1. Setup and Load Data
-DATA_FILE = "ucb_multiplier_results.csv"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(BASE_DIR, 'data', "ucb_multiplier_results.csv")
+GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 multipliers = [0.0, 0.5, 1.96, 5.0, 10.0]
 
 # Check if we need to run simulations
@@ -64,6 +66,7 @@ plt.grid(True, alpha=0.3)
 plt.ylim(-0.05, 1.05)
 
 plt.tight_layout()
-plt.savefig('ucb_exploration_rate.pdf')
+output_file = os.path.join(GRAPHICS_DIR, 'ucb_exploration_rate.pdf')
+plt.savefig(output_file)
 
-print("Analysis complete. Plot saved to ucb_exploration_rate.pdf")
+print(f"Analysis complete. Plot saved to {output_file}")

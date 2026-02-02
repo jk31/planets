@@ -7,7 +7,9 @@ from game import MiningInSpaceGame
 from agents import LinearUCBAgent, LinearThompsonAgent
 
 # 1. Setup and Run Simulation
-DATA_FILE = "simulation_results.csv"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
+GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 reg_values = [1, 10, 100, 1000]
 
 if os.path.exists(DATA_FILE):
@@ -79,6 +81,7 @@ for ax in axes:
 
 plt.suptitle('Comparison of Regularization Terms (No CI)', fontsize=16)
 plt.tight_layout(rect=(0, 0.03, 1, 0.95))
-plt.savefig('regularization_sweep.pdf')
+output_file = os.path.join(GRAPHICS_DIR, 'regularization_sweep.pdf')
+plt.savefig(output_file)
 
-print("Plot saved to regularization_sweep.pdf")
+print(f"Plot saved to {output_file}")

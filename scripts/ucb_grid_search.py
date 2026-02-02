@@ -7,7 +7,9 @@ from game import MiningInSpaceGame
 from agents import LinearUCBAgent
 
 # 1. Setup Experiment Grid
-DATA_FILE = "ucb_grid_results.csv"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(BASE_DIR, 'data', "ucb_grid_results.csv")
+GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 reg_values = [1, 10, 100, 1000]
 k_values = [0.0, 0.5, 1.96, 5.0, 10.0]
 
@@ -75,5 +77,6 @@ ax1.legend(title='Parameters', bbox_to_anchor=(1.05, 1), loc='upper left')
 ax1.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('ucb_grid_search.pdf')
-print("Plots saved to ucb_grid_search.pdf")
+output_file = os.path.join(GRAPHICS_DIR, 'ucb_grid_search.pdf')
+plt.savefig(output_file)
+print(f"Plots saved to {output_file}")

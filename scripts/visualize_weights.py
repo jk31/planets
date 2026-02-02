@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", output_file="weight_evolution.png"):
     df = pd.read_csv(csv_path)
@@ -85,5 +86,9 @@ def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", out
     print(f"Visualization saved to {output_file}")
 
 if __name__ == "__main__":
-    visualize_weight_evolution("simulation_results.csv", "UCB (reg=100)", "weight_evolution_ucb.pdf")
-    visualize_weight_evolution("simulation_results.csv", "TS (reg=100)", "weight_evolution_ts.pdf")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
+    GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
+    
+    visualize_weight_evolution(DATA_FILE, "UCB (reg=100)", os.path.join(GRAPHICS_DIR, "weight_evolution_ucb.pdf"))
+    visualize_weight_evolution(DATA_FILE, "TS (reg=100)", os.path.join(GRAPHICS_DIR, "weight_evolution_ts.pdf"))

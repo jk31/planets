@@ -7,7 +7,9 @@ from game import MiningInSpaceGame
 from agents import LinearUCBAgent, LinearThompsonAgent
 
 # 1. Setup and Load Data
-DATA_FILE = "simulation_results.csv"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
+GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 reg_values = [1, 10, 100, 1000]
 
 if not os.path.exists(DATA_FILE):
@@ -90,6 +92,7 @@ for ax in axes:
 
 plt.suptitle('Agent Exploration Behavior Over Time', fontsize=16)
 plt.tight_layout(rect=(0, 0.03, 1, 0.95))
-plt.savefig('exploration_rates.pdf')
+output_file = os.path.join(GRAPHICS_DIR, 'exploration_rates.pdf')
+plt.savefig(output_file)
 
-print("Analysis complete. Plot saved to exploration_rates.pdf")
+print(f"Analysis complete. Plot saved to {output_file}")

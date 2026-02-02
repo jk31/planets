@@ -91,13 +91,17 @@ def run_batch_simulation(agent_classes, game_class, n_simulations=50, n_trials=1
 
 if __name__ == "__main__":
     import argparse
+    import os
     from game import MiningInSpaceGame
     from agents import LinearUCBAgent, LinearThompsonAgent
+
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
 
     parser = argparse.ArgumentParser(description="Run Mining in Space simulations.")
     parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per agent")
     parser.add_argument("--n_trials", type=int, default=100, help="Number of trials per simulation")
-    parser.add_argument("--output", type=str, default="simulation_results.csv", help="Path to save results")
+    parser.add_argument("--output", type=str, default=DEFAULT_OUTPUT, help="Path to save results")
     args = parser.parse_args()
 
     # Define a standard suite of agents for CLI usage
