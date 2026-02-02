@@ -56,7 +56,8 @@ if __name__ == "__main__":
         'analyze_performance.py',
         'analyze_exploration.py',
         'analyze_weights.py',
-        'analyze_planet_distributions.py'
+        'analyze_planet_distributions.py',
+        'visualize_simulation_arms.py'
     ]
 
     for script_name in analytical_scripts:

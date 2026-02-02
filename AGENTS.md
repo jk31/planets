@@ -34,6 +34,7 @@ Concrete agents:
     - `scripts/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/exploration_analysis.pdf`.
     - `scripts/analyze_weights.py`: Processes simulation results to show how agent weights converge to ground truth for each planet. Generates `graphics/weight_evolution_analysis.pdf`.
     - `scripts/analyze_planet_distributions.py`: Shows distributions of selected planets overall and over time. Generates `graphics/planet_distribution_analysis.pdf`.
+    - `scripts/visualize_simulation_arms.py`: Generates detailed timelines of arm selections for every individual simulation. Generates PDFs in `graphics/simulations/`.
 - **Development**: `scripts/testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
 - **Manual play**: `scripts/game_in_console.py` lets a human choose arms in the console.
 

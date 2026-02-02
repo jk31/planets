@@ -7,15 +7,16 @@ This file describes the columns in `simulation_results.csv`, which records the t
 | :--- | :--- |
 | `simulation_id` | Integer ID identifying a specific simulation run within a batch. |
 | `agent_name` | The descriptive name of the agent configuration (e.g., `UCB (reg=100)`). |
-| `agent` | The class name of the agent used (e.g., `LinearUCBAgent`). |
 | `trial` | The trial number within the simulation (1-indexed). |
+| `reg` | The regularization parameter used for the simulation. |
+| `k` | The exploration multiplier parameter used for the simulation. |
 
 ## Context & Environment
 | Column | Description |
 | :--- | :--- |
-| `context_mercury` | Binary signal (0 or 1) for the Mercury context feature. |
-| `context_krypton` | Binary signal (0 or 1) for the Krypton context feature. |
-| `context_nobelium` | Binary signal (0 or 1) for the Nobelium context feature. |
+| `context_mercury` | Binary signal (-1 or 1) for the Mercury context feature. |
+| `context_krypton` | Binary signal (-1 or 1) for the Krypton context feature. |
+| `context_nobelium` | Binary signal (-1 or 1) for the Nobelium context feature. |
 | `mapping_arm_i` | The planet label (A, B, C, or D) assigned to arm index `i` for this simulation. |
 
 ## Agent Decisions & Outcomes
@@ -24,6 +25,7 @@ This file describes the columns in `simulation_results.csv`, which records the t
 | `choice_arm_index` | The index (0-3) of the arm selected by the agent. |
 | `choice_planet_label` | The planet label (A-D) corresponding to the agent's choice. |
 | `is_optimal` | 1 if the selected arm was the one with the highest expected reward, 0 otherwise. |
+| `exploration` | 1 if the choice was an exploration step, 0 if exploitation. |
 | `reward_received` | The numerical reward obtained from the selected arm. |
 
 ## Agent Internal State (Weights)
