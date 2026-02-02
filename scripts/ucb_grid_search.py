@@ -2,43 +2,19 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from simulation import run_batch_simulation
-from game import MiningInSpaceGame
-from agents import LinearUCBAgent
 
-# 1. Setup Experiment Grid
+# 1. Setup and Load Data
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_FILE = os.path.join(BASE_DIR, 'data', "ucb_grid_results.csv")
+DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
 GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
-reg_values = [1, 10, 100, 1000]
-k_values = [0.0, 0.5, 1.96, 5.0, 10.0]
 
-if os.path.exists(DATA_FILE):
-    print(f"Loading existing simulation data from {DATA_FILE}...")
-    results = pd.read_csv(DATA_FILE)
-else:
-    agents_to_test = {}
-    for reg in reg_values:
-        for k in k_values:
-            name = f"UCB(reg={reg}, k={k})"
-            # Use closures to capture current reg and k
-            agents_to_test[name] = lambda r=reg, val=k: LinearUCBAgent(regularization=r, exploration_multiplier=val)
+if not os.path.exists(DATA_FILE):
+    print(f"Data file {DATA_FILE} not found. Please run scripts/simulation.py first.")
+    exit(1)
 
-    print(f"Running grid search for {len(agents_to_test)} configurations...")
-    # Using 30 simulations and 100 trials to balance runtime and significance
-    results = run_batch_simulation(
-        agents_to_test, 
-        MiningInSpaceGame, 
-        n_simulations=30, 
-        n_trials=100, 
-        output_path=DATA_FILE
-    )
+results = pd.read_csv(DATA_FILE)
 
 # 2. Process Data for Visualization
-# Extract parameters from agent_name
-results['reg'] = results['agent_name'].str.extract(r'reg=(\d+)').astype(int)
-results['k'] = results['agent_name'].str.extract(r'k=([\d.]+)').astype(float)
-
 # Calculate average reward per configuration
 grid_summary = results.groupby(['reg', 'k'])['reward_received'].mean().reset_index()
 
@@ -55,12 +31,9 @@ ax0.set_ylabel('Regularization')
 ax0.set_xlabel('Exploration Multiplier (k)')
 
 # --- Plot B: Faceted Learning Curves ---
-# We'll use a standard lineplot with faceting by regularization
 ax1 = fig.add_subplot(gs[1])
 learning_data = results.groupby(['reg', 'k', 'trial'])['reward_received'].mean().reset_index()
 
-# For a cleaner plot, we'll use relplot-like faceting manually or just a grouped lineplot
-# Since we are in a single figure, let's use hue=k and style=reg or separate subplots
 sns.lineplot(
     data=learning_data,
     x='trial',

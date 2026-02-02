@@ -2,46 +2,25 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from simulation import run_batch_simulation
-from game import MiningInSpaceGame
-from agents import LinearUCBAgent
 
 # 1. Setup and Load Data
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_FILE = os.path.join(BASE_DIR, 'data', "ucb_multiplier_results.csv")
+DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
 GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 multipliers = [0.0, 0.5, 1.96, 5.0, 10.0]
 
-# Check if we need to run simulations
-run_sim = False
 if not os.path.exists(DATA_FILE):
-    run_sim = True
-else:
-    results = pd.read_csv(DATA_FILE)
-    if 'exploration' not in results.columns:
-        print("Existing data missing 'exploration' column. Re-running simulations...")
-        run_sim = True
+    print(f"Data file {DATA_FILE} not found. Please run scripts/simulation.py first.")
+    exit(1)
 
-if run_sim:
-    agents_to_test = {}
-    for k in multipliers:
-        agents_to_test[f"UCB (k={k})"] = lambda val=k: LinearUCBAgent(exploration_multiplier=val)
-
-    print(f"Running simulation for {len(agents_to_test)} agent configurations...")
-    results = run_batch_simulation(
-        agents_to_test, 
-        MiningInSpaceGame, 
-        n_simulations=50, 
-        n_trials=150, 
-        output_path=DATA_FILE
-    )
+results = pd.read_csv(DATA_FILE)
 
 # 2. Process Data
-# Calculate exploration rate per agent and trial
-expl_data = results.groupby(['agent_name', 'trial'])['exploration'].mean().reset_index()
+# Compare exploration rates for a fixed regularization (e.g. 100)
+results = results[results['reg'] == 100]
 
-# Extract Multiplier for plotting
-expl_data['k_val'] = expl_data['agent_name'].str.extract(r'k=([\d.]+)').astype(float)
+# Calculate exploration rate per configuration and trial
+expl_data = results.groupby(['agent_name', 'trial', 'k'])['exploration'].mean().reset_index()
 
 # 3. Create Plot
 plt.figure(figsize=(10, 6))
@@ -53,12 +32,12 @@ sns.lineplot(
     data=expl_data,
     x='trial',
     y='exploration',
-    hue='k_val',
+    hue='k',
     palette=palette,
     linewidth=2
 )
 
-plt.title('Impact of Exploration Multiplier (k) on UCB Exploration Rate', fontsize=14)
+plt.title('Impact of Exploration Multiplier (k) on UCB Exploration Rate (reg=100)', fontsize=14)
 plt.ylabel('Exploration Rate (P(Explore))')
 plt.xlabel('Trial Number')
 plt.legend(title='Exploration Multiplier (k)')

@@ -1,8 +1,16 @@
 import pandas as pd
+import numpy as np
+import os
+import argparse
+from game import MiningInSpaceGame
+from agents import LinearUCBAgent
 
-def run_single_game(agent_class, game_class, n_trials=100):
+def run_single_game(agent_class, game_class, n_trials=100, agent_kwargs=None):
+    if agent_kwargs is None:
+        agent_kwargs = {}
+    
     game = game_class(n_trials=n_trials)
-    agent = agent_class() 
+    agent = agent_class(**agent_kwargs) 
     
     full_simulation_log = []
     
@@ -21,7 +29,6 @@ def run_single_game(agent_class, game_class, n_trials=100):
         game_log = game.history[-1]
         
         record = {
-            "agent": agent_class.__name__,
             "trial": t + 1,
             
             # Decisions
@@ -42,8 +49,6 @@ def run_single_game(agent_class, game_class, n_trials=100):
         
         for arm_i in range(len(game.planet_labels)): # Loop over 4 arms
             w_data = current_weights[f"Arm_{arm_i}"]
-            
-            # Flatten the dictionary for the CSV/DataFrame
             record[f"w_intercept_arm_{arm_i}"] = w_data["Intercept"]
             record[f"w_mercury_arm_{arm_i}"]   = w_data["Mercury"]
             record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
@@ -64,56 +69,69 @@ def run_single_game(agent_class, game_class, n_trials=100):
     return pd.DataFrame(full_simulation_log)
 
 
-def run_batch_simulation(agent_classes, game_class, n_simulations=50, n_trials=100, output_path=None):
+def run_grid_simulation(agent_class, game_class, reg_values, k_values, n_simulations=50, n_trials=150, output_path=None):
     """
-    Runs the simulation for multiple agents and multiple repetitions.
+    Runs a grid search over regularization and exploration multiplier.
     """
     all_results = []
     
-    for agent_name, agent_cls in agent_classes.items():
-        print(f"Simulating Agent: {agent_name} ({n_simulations} runs)...")
-        
-        for sim_id in range(n_simulations):
-            df = run_single_game(agent_cls, game_class, n_trials)
+    total_configs = len(reg_values) * len(k_values)
+    config_idx = 1
+    
+    for reg in reg_values:
+        for k in k_values:
+            agent_name = f"UCB(reg={reg}, k={k})"
+            print(f"[{config_idx}/{total_configs}] Simulating {agent_name} ({n_simulations} runs)...")
             
-            df['simulation_id'] = sim_id
-            df['agent_name'] = agent_name
-            
-            all_results.append(df)
+            for sim_id in range(n_simulations):
+                df = run_single_game(agent_class, game_class, n_trials, agent_kwargs={'regularization': reg, 'exploration_multiplier': k})
+                
+                df['simulation_id'] = sim_id
+                df['agent_name'] = agent_name
+                df['reg'] = reg
+                df['k'] = k
+                
+                all_results.append(df)
+            config_idx += 1
             
     final_df = pd.concat(all_results, ignore_index=True)
     
     if output_path:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
         final_df.to_csv(output_path, index=False)
         print(f"Results saved to {output_path}")
         
     return final_df
 
 if __name__ == "__main__":
-    import argparse
-    import os
-    from game import MiningInSpaceGame
-    from agents import LinearUCBAgent
-
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
 
-    parser = argparse.ArgumentParser(description="Run Mining in Space simulations.")
-    parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per agent")
-    parser.add_argument("--n_trials", type=int, default=100, help="Number of trials per simulation")
+    parser = argparse.ArgumentParser(description="Run consolidated Mining in Space simulations.")
+    parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per configuration")
+    parser.add_argument("--n_trials", type=int, default=150, help="Number of trials per simulation")
     parser.add_argument("--output", type=str, default=DEFAULT_OUTPUT, help="Path to save results")
+    parser.add_argument("--quick", action="store_true", help="Run a subset of configurations for speed")
     args = parser.parse_args()
 
-    # Define a standard suite of agents for CLI usage
-    reg_values = [1, 10, 100, 1000]
-    agents_to_test = {}
-    for reg in reg_values:
-        agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
+    if args.quick:
+        reg_values = [10, 100]
+        k_values = [0.0, 1.96]
+        n_sims = 5
+        n_trials = 50
+    else:
+        reg_values = [1, 10, 100, 1000]
+        k_values = [0.0, 0.5, 1.96, 5.0, 10.0]
+        n_sims = args.n_simulations
+        n_trials = args.n_trials
 
-    run_batch_simulation(
-        agents_to_test, 
+    run_grid_simulation(
+        LinearUCBAgent, 
         MiningInSpaceGame, 
-        n_simulations=args.n_simulations, 
-        n_trials=args.n_trials, 
+        reg_values=reg_values,
+        k_values=k_values,
+        n_simulations=n_sims, 
+        n_trials=n_trials, 
         output_path=args.output
     )

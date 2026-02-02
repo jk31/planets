@@ -3,14 +3,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", output_file="weight_evolution.png"):
+def visualize_weight_evolution(csv_path, reg=100, k=1.96, output_file="weight_evolution.png"):
     df = pd.read_csv(csv_path)
     
-    # Filter for the specific agent
-    agent_df = df[df['agent_name'] == agent_name_to_plot].copy()
+    # Filter for the specific configuration
+    agent_df = df[(df['reg'] == reg) & (df['k'] == k)].copy()
     
     if agent_df.empty:
-        print(f"No data found for agent: {agent_name_to_plot}")
+        print(f"No data found for configuration: reg={reg}, k={k}")
         return
 
     # Ground Truth Weights
@@ -79,15 +79,16 @@ def visualize_weight_evolution(csv_path, agent_name_to_plot="UCB (reg=100)", out
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper right', bbox_to_anchor=(1, 0.95))
     
-    plt.suptitle(f"Weight Evolution vs Ground Truth: {agent_name_to_plot}\n(Dashed lines = Ground Truth)", fontsize=16)
+    plt.suptitle(f"Weight Evolution vs Ground Truth: reg={reg}, k={k}\n(Dashed lines = Ground Truth)", fontsize=16)
     plt.tight_layout(rect=(0, 0, 0.92, 0.95))
     
     plt.savefig(output_file)
     print(f"Visualization saved to {output_file}")
-
+ 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
     GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
     
-    visualize_weight_evolution(DATA_FILE, "UCB (reg=100)", os.path.join(GRAPHICS_DIR, "weight_evolution_ucb.pdf"))
+    visualize_weight_evolution(DATA_FILE, reg=100, k=1.96, output_file=os.path.join(GRAPHICS_DIR, "weight_evolution_ucb.pdf"))
+

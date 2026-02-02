@@ -2,39 +2,25 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from simulation import run_batch_simulation
-from game import MiningInSpaceGame
-from agents import LinearUCBAgent
 
-# 1. Setup and Run Simulation
+# 1. Setup and Load Data
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
 GRAPHICS_DIR = os.path.join(BASE_DIR, 'graphics')
 reg_values = [1, 10, 100, 1000]
 
-if os.path.exists(DATA_FILE):
-    print(f"Loading existing simulation data from {DATA_FILE}...")
-    results = pd.read_csv(DATA_FILE)
-else:
-    agents_to_test = {}
-    for reg in reg_values:
-        agents_to_test[f"UCB (reg={reg})"] = lambda r=reg: LinearUCBAgent(regularization=r)
+if not os.path.exists(DATA_FILE):
+    print(f"Data file {DATA_FILE} not found. Please run scripts/simulation.py first.")
+    exit(1)
 
-    print(f"Running simulation for {len(agents_to_test)} agent configurations...")
-    results = run_batch_simulation(
-        agents_to_test, 
-        MiningInSpaceGame, 
-        n_simulations=50, 
-        n_trials=100, 
-        output_path=DATA_FILE
-    )
+results = pd.read_csv(DATA_FILE)
 
 # 2. Process Data
-# Calculate means across simulations for each (agent_name, trial)
-plot_data = results.groupby(['agent_name', 'trial'])['reward_received'].mean().reset_index()
+# We want to compare regularization values for a fixed k (default k=1.96)
+results = results[results['k'] == 1.96]
 
-# Extract Regularization for plotting
-plot_data['reg_val'] = plot_data['agent_name'].str.extract(r'reg=(\d+)').astype(int)
+# Calculate means across simulations for each (agent_name, trial)
+plot_data = results.groupby(['agent_name', 'trial', 'reg'])['reward_received'].mean().reset_index()
 
 # 3. Create Plots
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -47,13 +33,13 @@ sns.lineplot(
     data=plot_data,
     x='trial',
     y='reward_received',
-    hue='reg_val',
+    hue='reg',
     ax=ax,
     palette=palette,
     linewidth=2,
     errorbar=None
 )
-ax.set_title('Linear UCB Performance by Regularization', fontsize=14)
+ax.set_title('Linear UCB Performance by Regularization (k=1.96)', fontsize=14)
 ax.set_ylabel('Average Reward')
 ax.set_xlabel('Trial Number')
 ax.legend(title='Regularization')
