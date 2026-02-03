@@ -1,18 +1,66 @@
 from game import MiningInSpaceGame
 from agents import LinearUCBAgent
 
+def _prompt_float(label, default, min_value=None):
+    prompt = f"{label} [{default}]: "
+    while True:
+        raw = input(prompt).strip()
+        if not raw:
+            return default
+        try:
+            value = float(raw)
+        except ValueError:
+            print("Invalid number. Try again.")
+            continue
+        if min_value is not None and value < min_value:
+            print(f"Value must be >= {min_value}. Try again.")
+            continue
+        return value
+
+
+def _prompt_int(label, default, min_value=None):
+    prompt = f"{label} [{default}]: "
+    while True:
+        raw = input(prompt).strip()
+        if not raw:
+            return default
+        try:
+            value = int(raw)
+        except ValueError:
+            print("Invalid integer. Try again.")
+            continue
+        if min_value is not None and value < min_value:
+            print(f"Value must be >= {min_value}. Try again.")
+            continue
+        return value
+
+
 def play_console_game():
     """
     A simple text loop to play the game manually.
     """
-    game = MiningInSpaceGame()
-    agent = LinearUCBAgent() # Advisor agent
-    
     print("--- WELCOME TO MINING IN SPACE ---")
     print("Goal: Maximize emeralds mined over 150 trials.")
     print("Contexts: Mercury, Krypton, Nobelium can be ON (+) or OFF (-).")
     print("Planets: 1, 2, 3, 4\n")
 
+    print("Advisor setup:")
+    print("1) Default parameters")
+    print("2) Customize parameters")
+
+    choice = input("Select an option (1-2): ").strip()
+    if choice == "2":
+        regularization = _prompt_int("Regularization", 100, min_value=0)
+        exploration_multiplier = _prompt_float("Exploration multiplier (k)", 1.96, min_value=0.0)
+        agent = LinearUCBAgent(
+            regularization=regularization,
+            exploration_multiplier=exploration_multiplier,
+        )
+    else:
+        agent = LinearUCBAgent()  # Advisor agent
+
+    game = MiningInSpaceGame()
+    
     while True:
         # Display Status
         print(f"\nTrial: {game.current_trial + 1}/{game.n_trials}")
