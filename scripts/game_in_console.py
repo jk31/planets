@@ -40,7 +40,7 @@ def play_console_game():
     A simple text loop to play the game manually.
     """
     print("--- WELCOME TO MINING IN SPACE ---")
-    print("Goal: Maximize emeralds mined over 100 trials.")
+    print("Goal: Maximize emeralds mined over 50 trials.")
     print("Contexts: Mercury, Krypton, Nobelium can be ON (+) or OFF (-).")
     print("Planets: 1, 2, 3, 4\n")
 

@@ -37,9 +37,9 @@ The `LinearUCBAgent` provides transparency into its decision-making process by r
     - `get_feature_uncertainties(context, feature_names)`: Returns per-arm, per-feature uncertainty contributions `(x^2 * A_inv[i,i])` for the given context.
 
 ## How agents are used in the repo
-- **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 100` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 100 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, current weights, per-arm total uncertainties, and per-feature uncertainty contributions (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
-- **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations (default 100 trials), and run all analytical scripts.
+- **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 50` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
+- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 50 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, current weights, per-arm total uncertainties, and per-feature uncertainty contributions (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations (default 50 trials), and run all analytical scripts.
 - **Consolidated Analysis**:
     - `scripts/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/performance_analysis.pdf`.
     - `scripts/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/exploration_analysis.pdf`.
