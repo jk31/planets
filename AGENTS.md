@@ -27,14 +27,18 @@ Key parameters:
 ### Self-Explaining Decisions
 The `LinearUCBAgent` provides transparency into its decision-making process by returning an info dictionary with:
 - `intent`: Classified as `explore` (if picking an arm with high uncertainty or unsampled) or `exploit` (if picking the best-estimated arm).
-- `explanation`: A human-readable narrative explaining *why* the arm was chosen (e.g., "Exploring Planet 2 because we're still learning how it performs when Krypton is on").
+- `explanation`: A human-readable narrative. 
+    - **Exploration**: Explains *why* the arm was chosen by highlighting the most uncertain feature(s) in the current context (including ties).
+    - **Exploitation**: Simply states "Exploit Planet X." to maintain focus on performance.
 - `context_features`: The key features that influenced the decision.
 
-- Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
+- Utilities: 
+    - `get_feature_weights(feature_names)`: Returns readable betas per arm.
+    - `get_feature_uncertainties(context, feature_names)`: Returns per-arm, per-feature uncertainty contributions `(x^2 * A_inv[i,i])` for the given context.
 
 ## How agents are used in the repo
 - **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 100` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 100 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 100 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, current weights, per-arm total uncertainties, and per-feature uncertainty contributions (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
 - **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations (default 100 trials), and run all analytical scripts.
 - **Consolidated Analysis**:
     - `scripts/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/performance_analysis.pdf`.

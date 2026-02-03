@@ -40,6 +40,14 @@ Each arm `i` (0-3) has a set of learned weights based on the linear regression m
 | `w_krypton_arm_i` | The learned weight for the Krypton feature for arm `i`. |
 | `w_nobelium_arm_i` | The learned weight for the Nobelium feature for arm `i`. |
 
+## Agent Feature Uncertainty (Per-Feature)
+Per arm `i` (0-3), the diagonal contribution to uncertainty for each feature in the current context, computed as `(x_i ** 2) * A_inv[i,i]` before the update for that trial:
+| Column | Description |
+| :--- | :--- |
+| `feature_uncertainty_mercury_arm_i` | The Mercury feature's uncertainty contribution for arm `i`. |
+| `feature_uncertainty_krypton_arm_i` | The Krypton feature's uncertainty contribution for arm `i`. |
+| `feature_uncertainty_nobelium_arm_i` | The Nobelium feature's uncertainty contribution for arm `i`. |
+
 ## Agent Beliefs (Predictions)
 The agent's estimate of the reward for each arm `i` (0-3) before taking an action:
 | Column | Description |

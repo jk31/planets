@@ -19,6 +19,10 @@ def run_single_game(agent_class, game_class, n_trials=100, agent_kwargs=None):
         
         # 1. Agent Decision & Beliefs
         recs = agent.get_recommendations(context, k=1.96)
+        feature_uncertainties = agent.get_feature_uncertainties(
+            context,
+            feature_names=["Mercury", "Krypton", "Nobelium"]
+        )
         arm_idx, info = agent.select_arm(context)
         
         # 2. Game Step
@@ -57,11 +61,18 @@ def run_single_game(agent_class, game_class, n_trials=100, agent_kwargs=None):
             record[f"w_krypton_arm_{arm_i}"]   = w_data["Krypton"]
             record[f"w_nobelium_arm_{arm_i}"]  = w_data["Nobelium"]
 
-        # 5. Save Mapping (e.g. Arm 0 -> 'D')
+        # 5. Save Feature Uncertainty Contributions
+        for arm_i in range(len(game.planet_labels)):
+            u_data = feature_uncertainties[f"Arm_{arm_i}"]
+            record[f"feature_uncertainty_mercury_arm_{arm_i}"] = u_data["Mercury"]
+            record[f"feature_uncertainty_krypton_arm_{arm_i}"] = u_data["Krypton"]
+            record[f"feature_uncertainty_nobelium_arm_{arm_i}"] = u_data["Nobelium"]
+
+        # 6. Save Mapping (e.g. Arm 0 -> 'D')
         for i, planet_id in enumerate(game_log["arm_permutation"]):
             record[f"mapping_arm_{i}"] = game.planet_labels[planet_id]
 
-        # 6. Save Agent Uncertainty stats
+        # 7. Save Agent Uncertainty stats
         for i, data in enumerate(recs):
             record[f"agent_mu_arm_{i}"]     = data['mean']
             record[f"agent_sigma_arm_{i}"]  = data['sigma']

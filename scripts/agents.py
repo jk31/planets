@@ -125,6 +125,28 @@ class LinearRegressionAgent:
             
         return weight_report
 
+    def get_feature_uncertainties(self, context, feature_names=None):
+        """
+        Returns per-arm feature uncertainty contributions for the given context.
+        contrib_i = (x_i ** 2) * A_inv[i, i]
+        """
+        if feature_names is None:
+            feature_names = [f"Feat_{i+1}" for i in range(self.n_features - 1)]
+
+        x = self._get_features(context)
+        uncertainty_report = {}
+
+        for arm_idx in range(self.n_arms):
+            A_inv = self.A_inv[arm_idx]
+            arm_data = {}
+            for idx, name in enumerate(feature_names, start=1):
+                contrib = (x[idx] ** 2) * A_inv[idx, idx]
+                arm_data[name] = contrib
+
+            uncertainty_report[f"Arm_{arm_idx}"] = arm_data
+
+        return uncertainty_report
+
 
 class LinearUCBAgent(LinearRegressionAgent):
     """
@@ -141,7 +163,7 @@ class LinearUCBAgent(LinearRegressionAgent):
             return default_names[:self.n_features - 1]
         return [f"Feature {i + 1}" for i in range(self.n_features - 1)]
 
-    def _select_uncertain_feature_indices(self, context, arm_idx, top_k=2):
+    def _select_uncertain_feature_indices(self, context, arm_idx, top_k=1):
         x = self._get_features(context)
         A_inv = self.A_inv[arm_idx]
         contributions = []
@@ -151,7 +173,19 @@ class LinearUCBAgent(LinearRegressionAgent):
             contributions.append((i - 1, contrib))
 
         contributions.sort(key=lambda item: item[1], reverse=True)
-        return [idx for idx, _ in contributions[:top_k]]
+
+        if not contributions or top_k <= 0:
+            return []
+
+        if top_k >= len(contributions):
+            return [idx for idx, _ in contributions]
+
+        cutoff = contributions[top_k - 1][1]
+        return [
+            idx
+            for idx, value in contributions
+            if value > cutoff or np.isclose(value, cutoff, rtol=1e-9, atol=1e-12)
+        ]
 
     def _select_value_feature_indices(self, context, arm_idx, top_k=2):
         x = self._get_features(context)
@@ -207,15 +241,14 @@ class LinearUCBAgent(LinearRegressionAgent):
         exploration = 0 if (is_top_arm and has_been_sampled) else 1
 
         if exploration == 1:
-            feature_indices = self._select_uncertain_feature_indices(context, choice, top_k=2)
+            feature_indices = self._select_uncertain_feature_indices(context, choice, top_k=1)
             reason = "we're still learning how it performs"
             context_phrase = self._format_feature_state(context, feature_indices)
             explanation = f"Exploring Planet {choice + 1} because {reason} {context_phrase}."
         else:
-            feature_indices = self._select_value_feature_indices(context, choice, top_k=2)
+            feature_indices = []
             reason = "we've learned it works best"
-            context_phrase = self._format_feature_state(context, feature_indices)
-            explanation = f"Exploiting Planet {choice + 1} because {reason} {context_phrase}."
+            explanation = f"Exploit Planet {choice + 1}."
 
         feature_names = self._get_feature_names()
         context_features = [feature_names[idx] for idx in feature_indices]
