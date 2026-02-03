@@ -247,8 +247,8 @@ class LinearUCBAgent(LinearRegressionAgent):
             explanation = f"Exploring Planet {choice + 1} because {reason} {context_phrase}."
         else:
             feature_indices = []
-            reason = "we've learned it works best"
-            explanation = f"Exploit Planet {choice + 1}."
+            reason = "it fits the current conditions"
+            explanation = f"Exploit Planet {choice + 1} because it fits the current conditions."
 
         feature_names = self._get_feature_names()
         context_features = [feature_names[idx] for idx in feature_indices]
