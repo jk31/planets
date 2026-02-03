@@ -94,5 +94,7 @@ def visualize_all_simulations(file_path, output_dir=os.path.join("graphics", "si
     print(f"All {total_sims} plots saved to {output_dir}")
 
 if __name__ == "__main__":
-    RESULTS_FILE = os.path.join("data", "simulation_results.csv")
-    visualize_all_simulations(RESULTS_FILE)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    RESULTS_FILE = os.path.join(BASE_DIR, "data", "simulation_results.csv")
+    OUTPUT_DIR = os.path.join(BASE_DIR, "graphics", "simulations")
+    visualize_all_simulations(RESULTS_FILE, output_dir=OUTPUT_DIR)

@@ -43,6 +43,7 @@ The `LinearUCBAgent` provides transparency into its decision-making process by r
 - **Consolidated Analysis**:
     - `scripts/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/performance_analysis.pdf`.
     - `scripts/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/exploration_analysis.pdf`.
+    - `scripts/analyze_uncertainty.py`: Analyzes the evolution of agent uncertainty (sigma) and breaks down feature-level uncertainty contributions. Generates `graphics/uncertainty_analysis.pdf`.
     - `scripts/analyze_weights.py`: Processes simulation results to show how agent weights converge to ground truth for each planet. Generates `graphics/weight_evolution_analysis.pdf`.
     - `scripts/analyze_planet_distributions.py`: Shows distributions of selected planets overall and over time. Generates `graphics/planet_distribution_analysis.pdf`.
     - `scripts/visualize_simulation_arms.py`: Generates detailed timelines of arm selections for every individual simulation. Generates PDFs in `graphics/simulations/`.
