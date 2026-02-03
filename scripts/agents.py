@@ -141,19 +141,48 @@ class LinearUCBAgent(LinearRegressionAgent):
             return default_names[:self.n_features - 1]
         return [f"Feature {i + 1}" for i in range(self.n_features - 1)]
 
-    def _get_active_uncertain_features(self, context, arm_idx, top_k=2):
+    def _select_uncertain_feature_indices(self, context, arm_idx, top_k=2):
         x = self._get_features(context)
         A_inv = self.A_inv[arm_idx]
-        feature_names = self._get_feature_names()
         contributions = []
 
-        for i, name in enumerate(feature_names, start=1):
-            if context[i - 1] > 0:
-                contrib = (x[i] ** 2) * A_inv[i, i]
-                contributions.append((name, contrib))
+        for i in range(1, self.n_features):
+            contrib = (x[i] ** 2) * A_inv[i, i]
+            contributions.append((i - 1, contrib))
 
         contributions.sort(key=lambda item: item[1], reverse=True)
-        return [name for name, _ in contributions[:top_k]]
+        return [idx for idx, _ in contributions[:top_k]]
+
+    def _select_value_feature_indices(self, context, arm_idx, top_k=2):
+        x = self._get_features(context)
+        beta = self.get_arm_params(arm_idx)
+        contributions = []
+
+        for i in range(1, self.n_features):
+            contrib = beta[i] * x[i]
+            contributions.append((i - 1, contrib))
+
+        contributions.sort(key=lambda item: abs(item[1]), reverse=True)
+        return [idx for idx, _ in contributions[:top_k]]
+
+    def _format_feature_state(self, context, feature_indices):
+        if not feature_indices:
+            return "in this situation"
+
+        feature_names = self._get_feature_names()
+        parts = []
+        for idx in feature_indices:
+            state = "on" if context[idx] > 0 else "off"
+            parts.append(f"{feature_names[idx]} is {state}")
+
+        if len(parts) == 1:
+            phrase = parts[0]
+        elif len(parts) == 2:
+            phrase = f"{parts[0]} and {parts[1]}"
+        else:
+            phrase = f"{', '.join(parts[:-1])}, and {parts[-1]}"
+
+        return f"when {phrase}"
 
     def select_arm(self, context):
         ucb_values = []
@@ -177,28 +206,25 @@ class LinearUCBAgent(LinearRegressionAgent):
 
         exploration = 0 if (is_top_arm and has_been_sampled) else 1
 
-        active_features = self._get_active_uncertain_features(context, choice, top_k=2)
-        if active_features:
-            context_phrase = f"active: {', '.join(active_features)}"
-        else:
-            context_phrase = "no active signals"
-
         if exploration == 1:
-            if choice != int(np.argmax(means)):
-                reason = "uncertainty bonus lifts it above the best-mean arm"
-            else:
-                reason = "uncertainty is high for the current context"
-
-            explanation = f"Explore arm {choice + 1} because {reason}; {context_phrase}."
+            feature_indices = self._select_uncertain_feature_indices(context, choice, top_k=2)
+            reason = "we're still learning how it performs"
+            context_phrase = self._format_feature_state(context, feature_indices)
+            explanation = f"Exploring Planet {choice + 1} because {reason} {context_phrase}."
         else:
-            reason = "highest predicted mean in this context"
-            explanation = f"Exploit arm {choice + 1} because {reason}; {context_phrase}."
+            feature_indices = self._select_value_feature_indices(context, choice, top_k=2)
+            reason = "we've learned it works best"
+            context_phrase = self._format_feature_state(context, feature_indices)
+            explanation = f"Exploiting Planet {choice + 1} because {reason} {context_phrase}."
+
+        feature_names = self._get_feature_names()
+        context_features = [feature_names[idx] for idx in feature_indices]
 
         return int(choice), {
             "exploration": exploration,
             "intent": "explore" if exploration == 1 else "exploit",
             "intent_reason": reason,
-            "context_features": active_features,
+            "context_features": context_features,
             "explanation": explanation,
             "chosen_mean": means[choice],
             "chosen_sigma": sigmas[choice],
