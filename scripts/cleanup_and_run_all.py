@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     # 2. Run simulation.py
     simulation_script = os.path.join(SCRIPTS_DIR, 'simulation.py')
-    run_script(simulation_script, ["--n_simulations", "20", "--n_trials", "150"])
+    run_script(simulation_script, ["--n_simulations", "20", "--n_trials", "100"])
 
     # 3. Run consolidated analytical scripts
     analytical_scripts = [

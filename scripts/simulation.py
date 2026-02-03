@@ -72,7 +72,7 @@ def run_single_game(agent_class, game_class, n_trials=100, agent_kwargs=None):
     return pd.DataFrame(full_simulation_log)
 
 
-def run_grid_simulation(agent_class, game_class, reg_values, k_values, n_simulations=50, n_trials=150, output_path=None):
+def run_grid_simulation(agent_class, game_class, reg_values, k_values, n_simulations=50, n_trials=100, output_path=None):
     """
     Runs a grid search over regularization and exploration multiplier.
     """
@@ -113,7 +113,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Run consolidated Mining in Space simulations.")
     parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per configuration")
-    parser.add_argument("--n_trials", type=int, default=150, help="Number of trials per simulation")
+    parser.add_argument("--n_trials", type=int, default=100, help="Number of trials per simulation")
     parser.add_argument("--output", type=str, default=DEFAULT_OUTPUT, help="Path to save results")
     parser.add_argument("--quick", action="store_true", help="Run a subset of configurations for speed")
     args = parser.parse_args()
@@ -122,7 +122,7 @@ if __name__ == "__main__":
         reg_values = [10, 100]
         k_values = [0.0, 1.96]
         n_sims = 5
-        n_trials = 50
+        n_trials = 100
     else:
         reg_values = [1, 10, 100, 1000]
         k_values = [0.0, 0.5, 1.96, 5.0, 10.0]

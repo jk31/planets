@@ -40,7 +40,7 @@ def play_console_game():
     A simple text loop to play the game manually.
     """
     print("--- WELCOME TO MINING IN SPACE ---")
-    print("Goal: Maximize emeralds mined over 150 trials.")
+    print("Goal: Maximize emeralds mined over 100 trials.")
     print("Contexts: Mercury, Krypton, Nobelium can be ON (+) or OFF (-).")
     print("Planets: 1, 2, 3, 4\n")
 
@@ -59,12 +59,12 @@ def play_console_game():
     else:
         agent = LinearUCBAgent()  # Advisor agent
 
-    game = MiningInSpaceGame()
+    game = MiningInSpaceGame(integer_rewards=True)
     
     while True:
         # Display Status
         print(f"\nTrial: {game.current_trial + 1}/{game.n_trials}")
-        print(f"Current Score: {game.total_score:.2f}")
+        print(f"Current Score: {game.total_score}")
         
         # Display Context (The key to the puzzle)
         ctx_display = [
@@ -93,12 +93,12 @@ def play_console_game():
         # Update advisor agent with what actually happened
         agent.update(context, choice - 1, reward)
         
-        print(f"Result: You mined {reward:.2f} emeralds!")
+        print(f"Result: You mined {reward} emeralds!")
         
         if done:
             print("\n--- GAME OVER ---")
-            print(f"Final Score: {game.total_score:.2f}")
-            print(f"Average Score: {game.total_score/game.n_trials:.2f}")
+            print(f"Final Score: {game.total_score}")
+            print(f"Average Score: {int(round(game.total_score / game.n_trials))}")
             break
 
 if __name__ == "__main__":

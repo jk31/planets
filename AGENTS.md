@@ -3,7 +3,7 @@
 - Windows Environment
 - Use python venv\scripts\activate
 
-This project simulates a 4-armed contextual bandit game ("Mining in Space") with linear contextual learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). All agents share a minimal interface:
+This project simulates a 4-armed contextual bandit game ("Mining in Space") with linear contextual learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). Rewards are rounded to the nearest integer to simplify gameplay and analysis. All agents share a minimal interface:
 
 - `select_arm(context) -> (int, dict)` picks an arm index 0-3 and returns an info dictionary containing decision metadata (intent, explanation, etc.).
 - `update(context, arm, reward)` incorporates the observed reward.
@@ -33,9 +33,9 @@ The `LinearUCBAgent` provides transparency into its decision-making process by r
 - Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
 
 ## How agents are used in the repo
-- **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 150` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
-- **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations, and run all analytical scripts.
+- **Simulation CLI**: Run `python scripts/simulation.py --n_simulations 20 --n_trials 100` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/simulation_results.csv`.
+- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 100 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, and current weights plus agent uncertainties (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
+- **Cleanup and Full Run**: `python scripts/cleanup_and_run_all.py` is the main entry point to clean `/data` and `/graphics`, execute a fresh batch of simulations (default 100 trials), and run all analytical scripts.
 - **Consolidated Analysis**:
     - `scripts/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/performance_analysis.pdf`.
     - `scripts/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/exploration_analysis.pdf`.

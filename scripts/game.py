@@ -1,11 +1,12 @@
 import numpy as np
 
 class MiningInSpaceGame:
-    def __init__(self, n_trials=100):
+    def __init__(self, n_trials=100, integer_rewards=True):
         self.n_trials = n_trials
         self.current_trial = 0
         self.total_score = 0
         self.history = []
+        self.integer_rewards = integer_rewards
         
         self.context_names = ["Mercury", "Krypton", "Nobelium"]
         
@@ -57,7 +58,10 @@ class MiningInSpaceGame:
         physical_means = [canonical_means[int(self.arm_permutation[i])] for i in range(4)]
         noises = np.random.normal(loc=0, scale=5.0, size=4)
         potential_rewards = [m + n for m, n in zip(physical_means, noises)]
-        
+
+        if self.integer_rewards:
+            potential_rewards = [int(np.round(value)) for value in potential_rewards]
+
         reward = potential_rewards[arm_choice]
         
         # --- LOGGING THE LABELS INTERNALLY ---

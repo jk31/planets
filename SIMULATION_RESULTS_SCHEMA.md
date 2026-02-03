@@ -29,7 +29,7 @@ This file describes the columns in `simulation_results.csv`, which records the t
 | `intent` | The strategic intent of the agent: `explore` or `exploit`. |
 | `intent_reason` | A brief technical reason for the chosen intent. |
 | `explanation` | A human-readable narrative explaining the choice based on intent and context. |
-| `reward_received` | The numerical reward obtained from the selected arm. |
+| `reward_received` | The integer reward obtained from the selected arm (rounded in-game). |
 
 ## Agent Internal State (Weights)
 Each arm `i` (0-3) has a set of learned weights based on the linear regression model:
