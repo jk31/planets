@@ -5,7 +5,7 @@
 
 This project simulates a 4-armed contextual bandit game ("Mining in Space") with linear contextual learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). All agents share a minimal interface:
 
-- `select_arm(context) -> int` picks an arm index 0-3.
+- `select_arm(context) -> (int, dict)` picks an arm index 0-3 and returns an info dictionary containing decision metadata (intent, explanation, etc.).
 - `update(context, arm, reward)` incorporates the observed reward.
 - `get_recommendations(context, k=1.96)` returns per-arm means/uncertainties for logging or UI.
 
@@ -21,8 +21,15 @@ Key parameters:
 - `n_features=3` (context dims).
 - `regularization` (default 100): Controls initial uncertainty. Higher values mean higher initial variance.
 
-Concrete agents:
+### Concrete agents
 - **LinearUCBAgent**: Picks `argmax(mu + k*sigma)`. The `exploration_multiplier` (k) defaults to 1.96 but is configurable via `__init__`.
+
+### Self-Explaining Decisions
+The `LinearUCBAgent` provides transparency into its decision-making process by returning an info dictionary with:
+- `intent`: Classified as `explore` (if picking an arm with high uncertainty or unsampled) or `exploit` (if picking the best-estimated arm).
+- `explanation`: A human-readable narrative explaining *why* the arm was chosen (e.g., "Exploring Planet 2 because we're still learning how it performs when Krypton is on").
+- `context_features`: The key features that influenced the decision.
+
 - Utilities: `get_feature_weights(feature_names)` returns readable betas per arm.
 
 ## How agents are used in the repo
