@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class AgentResponse(BaseModel):
     arm_choice: int
+    intent: str
     explanation: str
 
 class LLMAgent:
@@ -50,9 +51,16 @@ Previous History (JSON format):
 Task:
 Analyze your history to deduce the button-to-planet mapping and how each planet reacts to the Mercury, Krypton, and Nobelium signals.
 Then, choose the best button (0, 1, 2, or 3) for the current context to maximize your expected reward.
-Provide your choice and a brief explanation of your reasoning.
 
-Return the result as a JSON object with keys "arm_choice" (int) and "explanation" (string).
+Strategic Intent:
+- Classify your choice as either "explore" or "exploit".
+- Use "explore" if you are trying a button to learn more about its reward function or mapping.
+- Use "exploit" if you are confident in your knowledge and are choosing the button you believe has the highest expected reward for the current context.
+
+Return the result as a JSON object with keys:
+- "arm_choice": (int) The button index (0, 1, 2, or 3).
+- "intent": (string) Either "explore" or "exploit".
+- "explanation": (string) A brief explanation of your reasoning.
 """
 
     def select_arm(self, context):
@@ -88,6 +96,7 @@ Return the result as a JSON object with keys "arm_choice" (int) and "explanation
             # Parse response
             result = response.parsed
             arm_choice = result.arm_choice
+            intent = result.intent
             explanation = result.explanation
             
             # Ensure arm_choice is valid
@@ -98,12 +107,13 @@ Return the result as a JSON object with keys "arm_choice" (int) and "explanation
         except Exception as e:
             print(f"Error calling LLM or parsing response: {e}. Defaulting to Arm 0.")
             arm_choice = 0
+            intent = "error"
             explanation = f"Error: {str(e)}"
             
         return int(arm_choice), {
             "explanation": explanation,
-            "exploration": 0,
-            "intent": "llm_decision"
+            "exploration": 1 if intent == "explore" else 0,
+            "intent": intent
         }
 
     def update(self, context, arm, reward):

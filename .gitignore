@@ -1,6 +1,7 @@
 *.csv
 *.pdf
 graphics/simulations/
+history.json
 
 
 # Byte-compiled / optimized / DLL files
