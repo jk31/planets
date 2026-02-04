@@ -26,11 +26,11 @@ Key parameters:
 
 ### Self-Explaining Decisions
 The `LinearUCBAgent` provides transparency into its decision-making process by returning an info dictionary with:
-- `intent`: Classified as `explore` (if picking an arm with high uncertainty or unsampled) or `exploit` (if picking the best-estimated arm).
-- `explanation`: A human-readable narrative. 
-    - **Exploration**: Explains *why* the arm was chosen by highlighting the most uncertain feature(s) in the current context (including ties).
-    - **Exploitation**: Simply states "Exploit Planet X." to maintain focus on performance.
-- `context_features`: The key features that influenced the decision.
+- `intent`: Classified as `explore` when uncertainty influences the choice (the UCB-best arm is not the unique mean-best arm, or mean estimates are tied), otherwise `exploit`.
+- `explanation`: A human-readable narrative.
+    - **Exploration**: Lists all three context signals to show what the agent is trying to learn in this situation.
+    - **Exploitation**: Lists all three context signals with per-feature value contributions (`beta * x`) for the chosen arm.
+- `context_features`: The three context signals.
 
 - Utilities: 
     - `get_feature_weights(feature_names)`: Returns readable betas per arm.

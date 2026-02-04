@@ -199,24 +199,33 @@ class LinearUCBAgent(LinearRegressionAgent):
         contributions.sort(key=lambda item: abs(item[1]), reverse=True)
         return [idx for idx, _ in contributions[:top_k]]
 
-    def _format_feature_state(self, context, feature_indices):
-        if not feature_indices:
-            return "in this situation"
+    def _format_signed(self, value, precision=1):
+        if abs(value) < 1e-6:
+            value = 0.0
+        return f"{value:+.{precision}f}"
 
+    def _format_value_contributions(self, context, arm_idx, precision=1):
+        x = self._get_features(context)
+        beta = self.get_arm_params(arm_idx)
         feature_names = self._get_feature_names()
         parts = []
-        for idx in feature_indices:
+
+        for i, name in enumerate(feature_names, start=1):
+            state = "on" if context[i - 1] > 0 else "off"
+            contrib = beta[i] * x[i]
+            parts.append(f"{name} {state} ({self._format_signed(contrib, precision)})")
+
+        return ", ".join(parts)
+
+    def _format_learning_context(self, context):
+        feature_names = self._get_feature_names()
+        parts = []
+
+        for idx, name in enumerate(feature_names):
             state = "on" if context[idx] > 0 else "off"
-            parts.append(f"{feature_names[idx]} is {state}")
+            parts.append(f"{name} {state}")
 
-        if len(parts) == 1:
-            phrase = parts[0]
-        elif len(parts) == 2:
-            phrase = f"{parts[0]} and {parts[1]}"
-        else:
-            phrase = f"{', '.join(parts[:-1])}, and {parts[-1]}"
-
-        return f"when {phrase}"
+        return ", ".join(parts)
 
     def select_arm(self, context):
         ucb_values = []
@@ -233,25 +242,25 @@ class LinearUCBAgent(LinearRegressionAgent):
         # Algorithm 1: Choose argmax
         choice = np.argmax(ucb_values)
 
-        # Classify as EXPLOIT or EXPLORE
         max_mean = np.max(means)
-        is_top_arm = np.isclose(means[choice], max_mean)
-        has_been_sampled = self.counts[choice] > 0
-
-        exploration = 0 if (is_top_arm and has_been_sampled) else 1
+        mean_ties = np.isclose(means, max_mean)
+        if np.sum(mean_ties) > 1:
+            exploration = 1
+        else:
+            mean_best_idx = int(np.argmax(means))
+            exploration = 0 if choice == mean_best_idx else 1
 
         if exploration == 1:
-            feature_indices = self._select_uncertain_feature_indices(context, choice, top_k=1)
-            reason = "we're still learning how it performs"
-            context_phrase = self._format_feature_state(context, feature_indices)
-            explanation = f"Exploring Planet {choice + 1} because {reason} {context_phrase}."
+            reason = "learn how each signal affects this planet"
+            context_phrase = self._format_learning_context(context)
+            explanation = f"Exploring Planet {choice + 1} to {reason}: {context_phrase}."
         else:
-            feature_indices = []
-            reason = "it fits the current conditions"
-            explanation = f"Exploit Planet {choice + 1} because it fits the current conditions."
+            reason = "estimated effects favor this planet"
+            context_phrase = self._format_value_contributions(context, choice)
+            explanation = f"Exploit Planet {choice + 1} because {reason}: {context_phrase}."
 
         feature_names = self._get_feature_names()
-        context_features = [feature_names[idx] for idx in feature_indices]
+        context_features = list(feature_names)
 
         return int(choice), {
             "exploration": exploration,
