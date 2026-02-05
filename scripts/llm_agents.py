@@ -29,16 +29,15 @@ class LLMAgent:
         # Single prompt template with placeholders
         self.prompt_template = """
 You are an expert agent playing a contextual bandit game called "Mining in Space".
-There are 4 mining locations (Buttons 0, 1, 2, 3) corresponding to 4 planets (A, B, C, D) in a randomized mapping.
-Each planet's reward depends on three binary context signals: Mercury, Krypton, and Nobelium.
+There are 4 mining locations (Buttons 0, 1, 2, 3).
+Each buttons's reward depends on three binary context signals: Mercury, Krypton, and Nobelium.
 Signals are either 1 (on) or -1 (off).
 The game lasts for {n_trials} trials. Your goal is to maximize total profit.
 
 Game Rules:
-- Each planet (A, B, C, D) has a unique, hidden reward function based on the three context signals.
-- One planet might have a constant reward, while others vary significantly based on specific signals.
-- The mapping between Buttons (0-3) and Planets (A-D) is fixed for this game but unknown to you.
-- Your reward is the expected planet reward plus some random noise.
+- Each button (0, 1, 2, 3) has a unique, hidden reward function based on the three context signals.
+- One button might have a constant reward, while others vary significantly based on specific signals.
+- Your reward is the expected button reward plus some random noise.
 
 Current Context:
 - Mercury: {mercury}
@@ -49,7 +48,7 @@ Previous History (JSON format):
 {history_json}
 
 Task:
-Analyze your history to deduce the button-to-planet mapping and how each planet reacts to the Mercury, Krypton, and Nobelium signals.
+Analyze your history to deduce how each button's reward function reacts to the Mercury, Krypton, and Nobelium signals.
 Then, choose the best button (0, 1, 2, or 3) for the current context to maximize your expected reward.
 
 Strategic Intent:
