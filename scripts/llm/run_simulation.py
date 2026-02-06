@@ -2,6 +2,15 @@ import os
 import sys
 import argparse
 import pandas as pd
+from pathlib import Path
+
+CURRENT_DIR = Path(__file__).resolve().parent
+SCRIPTS_DIR = CURRENT_DIR.parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
 from game import MiningInSpaceGame
 from llm_agents import LLMAgent
 
@@ -94,8 +103,8 @@ if __name__ == "__main__":
         print("Error: Please set the GEMINI_API_KEY environment variable.")
         sys.exit(1)
         
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', "llm_simulation_results.csv")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', 'llm', "simulation_results.csv")
 
     parser = argparse.ArgumentParser(description="Run multiple LLM Agent simulations and save results.")
     parser.add_argument("--simulations", type=int, default=20, help="Number of simulations to run")

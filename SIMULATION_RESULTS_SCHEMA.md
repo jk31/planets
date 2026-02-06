@@ -1,6 +1,6 @@
 # Simulation Results Schema
 
-This file describes the columns in `simulation_results.csv`, which records the trial-by-trial logs of the "Mining in Space" bandit simulations.
+This file describes the columns in `data/agents/simulation_results.csv`, which records the trial-by-trial logs of the "Mining in Space" bandit simulations.
 
 ## Metadata
 | Column | Description |

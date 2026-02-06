@@ -1,4 +1,4 @@
-*.csv
+simulation_data.csv
 *.pdf
 graphics/simulations/
 history.json

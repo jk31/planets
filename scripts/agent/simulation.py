@@ -2,6 +2,13 @@ import pandas as pd
 import numpy as np
 import os
 import argparse
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
 from game import MiningInSpaceGame
 from agents import LinearUCBAgent
 
@@ -119,8 +126,8 @@ def run_grid_simulation(agent_class, game_class, reg_values, k_values, n_simulat
     return final_df
 
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', "simulation_results.csv")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    DEFAULT_OUTPUT = os.path.join(BASE_DIR, 'data', 'agents', "simulation_results.csv")
 
     parser = argparse.ArgumentParser(description="Run consolidated Mining in Space simulations.")
     parser.add_argument("--n_simulations", type=int, default=50, help="Number of simulations per configuration")

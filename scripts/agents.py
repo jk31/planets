@@ -3,7 +3,6 @@ import numpy as np
 class LinearRegressionAgent:
     """
     Base Contextual Model using Recursive Least Squares.
-    Reference: [cite: 64-71]
     """
     def __init__(self, n_arms=4, n_features=3, regularization=100):
         self.n_arms = n_arms
@@ -151,7 +150,6 @@ class LinearRegressionAgent:
 class LinearUCBAgent(LinearRegressionAgent):
     """
     Linear Regression with UCB.
-    Reference: Algorithm 1 [cite: 105]
     """
     def __init__(self, n_arms=4, n_features=3, regularization=100, exploration_multiplier=1.96):
         super().__init__(n_arms, n_features, regularization)

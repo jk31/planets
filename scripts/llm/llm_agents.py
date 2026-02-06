@@ -135,7 +135,7 @@ Return the result as a JSON object with keys:
         with open("history.json", "w") as f:
             json.dump(self.history, f, indent=2)
 
-    # Dummy methods to support scripts/simulation.py logging
+    # Dummy methods to support scripts/agent/simulation.py logging
     def get_recommendations(self, context, k=1.96):
         return [{"mean": 0.0, "sigma": 0.0, "lower": 0.0, "upper": 0.0} for _ in range(self.n_arms)]
 
