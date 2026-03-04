@@ -1,0 +1,5 @@
+model,file,n_simulations,mean_reward_per_trial,sd_reward_per_trial,mean_exploration_rate,sd_exploration_rate
+gemini-2,llm_simulation_results-gemini-2.csv,20,53.49100000000001,7.07465297642521,0.11200000000000003,0.02546411303445653
+gemini-2-thinking,llm_simulation_results-gemini-2-thinking.csv,20,53.791,6.173138671100104,0.11300000000000002,0.026177531547010635
+gemini-3-flash-preview,llm_simulation_results_gemini-3-flash-preview.csv,20,68.70500000000001,8.404006250154243,0.17200000000000001,0.02783409495753837
+gemini-3.1-flash-lite-preview,llm_simulation_results_gemini-3.1-flash-lite-preview.csv,20,57.766,7.643424693985778,0.088,0.038058127287500354

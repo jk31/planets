@@ -11,8 +11,8 @@ if str(CURRENT_DIR) not in sys.path:
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from game import MiningInSpaceGame
-from llm_agents import LLMAgent
+from game import MiningInSpaceGame  # type: ignore
+from llm_agents import LLMAgent, LLMDecisionError
 
 def run_llm_simulation(n_simulations=1, n_trials=50, output_path=None):
     all_results = []
@@ -29,13 +29,22 @@ def run_llm_simulation(n_simulations=1, n_trials=50, output_path=None):
         print(f"Hidden Mapping (Button -> Planet): {mapping}")
         
         total_reward = 0
+        simulation_aborted = False
         
         for t in range(n_trials):
             context = game.current_context.copy()
             mercury, krypton, nobelium = context
             
             # 1. Agent Decision
-            arm_idx, info = agent.select_arm(context)
+            try:
+                arm_idx, info = agent.select_arm(context)
+            except LLMDecisionError as exc:
+                simulation_aborted = True
+                print(
+                    f"Simulation {sim_id + 1} aborted at trial {t + 1}: {exc}"
+                )
+                break
+
             explanation = info.get("explanation", "No explanation provided.")
             intent = info.get("intent", "unknown")
             exploration = info.get("exploration", 0)
@@ -81,7 +90,12 @@ def run_llm_simulation(n_simulations=1, n_trials=50, output_path=None):
             if done:
                 break
                 
-        print(f"Simulation {sim_id + 1} Complete. Final Score: {total_reward}")
+        if simulation_aborted:
+            print(
+                f"Simulation {sim_id + 1} Stopped Early. Final Score: {total_reward}"
+            )
+        else:
+            print(f"Simulation {sim_id + 1} Complete. Final Score: {total_reward}")
 
         # Cleanup history.json after each simulation run to ensure 
         # a fresh start for the next agent
