@@ -3,3 +3,6 @@ gemini-2,llm_simulation_results-gemini-2.csv,20,53.49100000000001,7.074652976425
 gemini-2-thinking,llm_simulation_results-gemini-2-thinking.csv,20,53.791,6.173138671100104,0.11300000000000002,0.026177531547010635
 gemini-3-flash-preview,llm_simulation_results_gemini-3-flash-preview.csv,20,68.70500000000001,8.404006250154243,0.17200000000000001,0.02783409495753837
 gemini-3.1-flash-lite-preview,llm_simulation_results_gemini-3.1-flash-lite-preview.csv,20,57.766,7.643424693985778,0.088,0.038058127287500354
+gemini-3.1-flash-lite-preview-v2,llm_simulation_results_gemini-3.1-flash-lite-preview-v2.csv,20,61.36999999999999,7.738468500733339,0.11000000000000001,0.028654015976455158
+gemini-3.1-flash-lite-preview-v3,llm_simulation_results_gemini-3.1-flash-lite-preview-v3.csv,20,59.66300000000001,7.47512724764074,0.15500000000000003,0.05186013579051377
+gemini-3.1-flash-lite-preview-v4,llm_simulation_results_gemini-3.1-flash-lite-preview-v4.csv,20,55.342,6.942285078075024,0.22300000000000003,0.050377522138768456

@@ -1,6 +1,8 @@
 import os
 import json
 import time
+from collections import defaultdict
+from statistics import mean, pstdev
 from google import genai
 from google.genai import types
 from pydantic import BaseModel
@@ -37,37 +39,123 @@ class LLMAgent:
         self.prompt_template = """
 You are an expert agent playing a contextual bandit game called "Mining in Space".
 There are 4 mining locations (Buttons 0, 1, 2, 3).
-Each buttons's reward depends on three binary context signals: Mercury, Krypton, and Nobelium.
+Each button's reward depends on three binary context signals: Mercury, Krypton, and Nobelium.
 Signals are either 1 (on) or -1 (off).
 The game lasts for {n_trials} trials. Your goal is to maximize total profit.
 
-Game Rules:
-- Each button (0, 1, 2, 3) has a unique, hidden reward function based on the three context signals.
-- One button might have a constant reward, while others vary significantly based on specific signals.
-- Your reward is the expected button reward plus some random noise.
+Important environment facts:
+- Each button has a unique hidden reward function.
+- Some buttons are context-sensitive and one may be near-constant.
+- Rewards include random noise, so single outcomes are not reliable evidence.
 
 Current Context:
+- Trial: {current_trial} of {n_trials}
 - Mercury: {mercury}
 - Krypton: {krypton}
 - Nobelium: {nobelium}
 
-Previous History (JSON format):
+Button-Level Summary (JSON):
+{arm_stats_json}
+
+Context-Level Summary (JSON):
+{context_stats_json}
+
+Previous History (JSON):
 {history_json}
 
 Task:
-Analyze your history to deduce how each button's reward function reacts to the Mercury, Krypton, and Nobelium signals.
-Then, choose the best button (0, 1, 2, or 3) for the current context to maximize your expected reward.
+Infer a compact reward model for each button from all available data.
+For the current context, estimate expected reward and uncertainty for each button.
+Choose the button with the best long-run value by balancing immediate reward and information value.
+
+Reasoning principles:
+- Use all history, not only recent outcomes.
+- Prefer repeated patterns over isolated highs/lows.
+- Compare top alternatives before deciding.
+- Favor optimistic value: expected_reward + uncertainty_bonus.
+- If options are close, resolving uncertainty has value.
+- Avoid locking into one hypothesis too early when plausible alternatives remain under-tested.
 
 Strategic Intent:
-- Classify your choice as either "explore" or "exploit".
-- Use "explore" if you are trying a button to learn more about its reward function or mapping.
-- Use "exploit" if you are confident in your knowledge and are choosing the button you believe has the highest expected reward for the current context.
+- Use "explore" when uncertainty materially drives your choice.
+- Use "exploit" when one option is clearly best with strong evidence.
+- Include confidence (high/medium/low) and key uncertainty in your explanation.
 
 Return the result as a JSON object with keys:
 - "arm_choice": (int) The button index (0, 1, 2, or 3).
 - "intent": (string) Either "explore" or "exploit".
-- "explanation": (string) A brief explanation of your reasoning.
+- "explanation": (string) One or two sentences explaining the decision.
 """
+
+    def _context_key(self, context):
+        return f"M={int(context[0])},K={int(context[1])},N={int(context[2])}"
+
+    def _build_arm_stats(self):
+        arm_rewards = {arm: [] for arm in range(self.n_arms)}
+        arm_context_counts = {arm: defaultdict(int) for arm in range(self.n_arms)}
+
+        for entry in self.history:
+            arm = int(entry["button_chosen"])
+            reward = int(entry["reward_received"])
+            context = entry["context"]
+            context_key = self._context_key(
+                [context["Mercury"], context["Krypton"], context["Nobelium"]]
+            )
+            arm_rewards[arm].append(reward)
+            arm_context_counts[arm][context_key] += 1
+
+        stats = {}
+        for arm in range(self.n_arms):
+            rewards = arm_rewards[arm]
+            top_contexts = sorted(
+                arm_context_counts[arm].items(),
+                key=lambda item: item[1],
+                reverse=True,
+            )[:4]
+            stats[f"button_{arm}"] = {
+                "n_samples": len(rewards),
+                "mean_reward": round(mean(rewards), 2) if rewards else None,
+                "reward_std": (
+                    round(pstdev(rewards), 2)
+                    if len(rewards) > 1
+                    else (0.0 if rewards else None)
+                ),
+                "n_contexts_seen": len(arm_context_counts[arm]),
+                "most_seen_contexts": [
+                    {"context": context_key, "count": count}
+                    for context_key, count in top_contexts
+                ],
+            }
+
+        return stats
+
+    def _build_context_stats(self):
+        context_arm_rewards = defaultdict(lambda: defaultdict(list))
+
+        for entry in self.history:
+            context = entry["context"]
+            context_key = self._context_key(
+                [context["Mercury"], context["Krypton"], context["Nobelium"]]
+            )
+            arm = int(entry["button_chosen"])
+            reward = int(entry["reward_received"])
+            context_arm_rewards[context_key][arm].append(reward)
+
+        stats = {}
+        for context_key, arm_data in sorted(context_arm_rewards.items()):
+            arm_means = {
+                f"button_{arm}": round(mean(rewards), 2)
+                for arm, rewards in sorted(arm_data.items())
+            }
+            best_arm = max(arm_data.keys(), key=lambda arm: mean(arm_data[arm]))
+            stats[context_key] = {
+                "samples": int(sum(len(rewards) for rewards in arm_data.values())),
+                "best_observed_button": int(best_arm),
+                "best_observed_mean": round(mean(arm_data[best_arm]), 2),
+                "arm_means": arm_means,
+            }
+
+        return stats
 
     def select_arm(self, context):
         """
@@ -75,16 +163,22 @@ Return the result as a JSON object with keys:
         """
         # Prepare context
         mercury, krypton, nobelium = context
+        current_trial = len(self.history) + 1
         
-        # Prepare history as JSON string
-        history_json = json.dumps(self.history, indent=2)
+        # Prepare summaries and history as JSON strings
+        arm_stats_json = json.dumps(self._build_arm_stats(), indent=2)
+        context_stats_json = json.dumps(self._build_context_stats(), indent=2)
+        history_json = json.dumps(self.history, separators=(",", ":"))
         
         # Fill prompt
         prompt = self.prompt_template.format(
             n_trials=self.n_trials,
+            current_trial=current_trial,
             mercury=mercury,
             krypton=krypton,
             nobelium=nobelium,
+            arm_stats_json=arm_stats_json,
+            context_stats_json=context_stats_json,
             history_json=history_json
         )
         
