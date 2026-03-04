@@ -66,6 +66,7 @@ def run_agents_pipeline(agent_sims: int, agent_trials: int) -> None:
         return
 
     agent_analysis_scripts = [
+        SCRIPTS_DIR / "analysis" / "agents" / "summarize_models.py",
         SCRIPTS_DIR / "analysis" / "agents" / "analyze_performance.py",
         SCRIPTS_DIR / "analysis" / "agents" / "analyze_exploration.py",
         SCRIPTS_DIR / "analysis" / "agents" / "analyze_uncertainty.py",
