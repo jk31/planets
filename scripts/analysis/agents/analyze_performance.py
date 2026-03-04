@@ -17,6 +17,7 @@ def analyze_performance(data_file: Path, output_dir: Path) -> None:
         raise SystemExit(1)
 
     results = pd.read_csv(data_file)
+    sns.set_theme(style="whitegrid")
     grid_summary = results.groupby(["reg", "k"])["reward_received"].mean().reset_index()
 
     fig = plt.figure(figsize=(16, 12))
@@ -29,22 +30,22 @@ def analyze_performance(data_file: Path, output_dir: Path) -> None:
     ax0.set_ylabel("Regularization")
     ax0.set_xlabel("Exploration Multiplier (k)")
 
-    learning_data = results.groupby(["reg", "k", "trial"])["reward_received"].mean().reset_index()
-    reg_values = sorted(learning_data["reg"].unique())
-    k_values = sorted(learning_data["k"].unique())
+    reg_values = sorted(results["reg"].unique())
+    k_values = sorted(results["k"].unique())
     palette_k = sns.color_palette("rocket_r", n_colors=len(k_values))
 
     gs_inner = gs[1].subgridspec(1, len(reg_values))
 
     for i, reg in enumerate(reg_values):
         ax = fig.add_subplot(gs_inner[i])
-        subset = learning_data[learning_data["reg"] == reg]
+        subset = results[results["reg"] == reg]
         sns.lineplot(
             data=subset,
             x="trial",
             y="reward_received",
             hue="k",
             palette=palette_k,
+            errorbar=("ci", 95),
             ax=ax,
             legend=(i == len(reg_values) - 1),
         )
@@ -55,7 +56,7 @@ def analyze_performance(data_file: Path, output_dir: Path) -> None:
         if i == len(reg_values) - 1:
             ax.legend(title="k value", bbox_to_anchor=(1.05, 1), loc="upper left")
 
-    plt.suptitle("Consolidated Performance Analysis: Heatmap and Learning Curves", fontsize=16)
+    plt.suptitle("Consolidated Performance Analysis: Heatmap and Learning Curves (95% CI)", fontsize=16)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "performance_analysis.pdf"
     plt.savefig(output_file)

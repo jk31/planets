@@ -17,37 +17,33 @@ def analyze_exploration(data_file: Path, output_dir: Path) -> None:
         raise SystemExit(1)
 
     results = pd.read_csv(data_file)
-
-    plt.figure(figsize=(12, 6))
     sns.set_theme(style="whitegrid")
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    line_color = sns.color_palette("rocket_r", n_colors=1)[0]
 
     sns.lineplot(
         data=results,
         x="trial",
         y="exploration",
-        color="orange",
+        color=line_color,
         linewidth=2,
-        label="LLM Agent",
+        errorbar=("ci", 95),
+        ax=ax,
     )
 
-    plt.title("LLM Agent Exploration Behavior: Probability of Exploration over Time", fontsize=16)
-    plt.xlabel("Trial Number", fontsize=12)
-    plt.ylabel("P(Explore)", fontsize=12)
-    plt.ylim(-0.05, 1.05)
-    plt.grid(True, alpha=0.3)
-    plt.legend(loc="upper right")
+    ax.set_title("LLM Exploration Behavior", fontsize=14)
+    ax.set_xlabel("Trial Number")
+    ax.set_ylabel("P(Explore)")
+    ax.set_ylim(-0.05, 1.05)
+    ax.grid(True, alpha=0.3)
 
-    initial_expl = float(results.loc[results["trial"] <= 5, "exploration"].to_numpy().mean())
-    final_expl = float(results.loc[results["trial"] >= 45, "exploration"].to_numpy().mean())
-
-    plt.text(5, 0.9, f"Initial Explore Rate: {initial_expl:.1%}", fontsize=10, bbox={"facecolor": "white", "alpha": 0.8})
-    plt.text(35, 0.1, f"Final Explore Rate: {final_expl:.1%}", fontsize=10, bbox={"facecolor": "white", "alpha": 0.8})
-
-    plt.tight_layout()
+    fig.suptitle("Consolidated Exploration Behavior Analysis (95% CI)", fontsize=16)
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "exploration_analysis.pdf"
-    plt.savefig(output_file)
-    plt.close()
+    fig.savefig(output_file, bbox_inches="tight")
+    plt.close(fig)
     print(f"LLM exploration plot saved to {output_file}")
 
 

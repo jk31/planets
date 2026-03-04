@@ -17,9 +17,9 @@ def analyze_exploration(data_file: Path, output_dir: Path) -> None:
         raise SystemExit(1)
 
     results = pd.read_csv(data_file)
-    expl_data = results.groupby(["agent_name", "reg", "k", "trial"])["exploration"].mean().reset_index()
-    reg_values = sorted(expl_data["reg"].unique())
-    k_values = sorted(expl_data["k"].unique())
+    sns.set_theme(style="whitegrid")
+    reg_values = sorted(results["reg"].unique())
+    k_values = sorted(results["k"].unique())
 
     fig, axes = plt.subplots(1, len(reg_values), figsize=(5 * len(reg_values), 5), sharey=True)
     axes = [axes] if len(reg_values) == 1 else axes
@@ -27,13 +27,14 @@ def analyze_exploration(data_file: Path, output_dir: Path) -> None:
 
     for i, reg in enumerate(reg_values):
         ax = axes[i]
-        subset = expl_data[expl_data["reg"] == reg]
+        subset = results[results["reg"] == reg]
         sns.lineplot(
             data=subset,
             x="trial",
             y="exploration",
             hue="k",
             palette=palette_k,
+            errorbar=("ci", 95),
             ax=ax,
             legend=(i == len(reg_values) - 1),
         )
@@ -45,7 +46,7 @@ def analyze_exploration(data_file: Path, output_dir: Path) -> None:
         if i == len(reg_values) - 1:
             ax.legend(title="k value", bbox_to_anchor=(1.05, 1), loc="upper left")
 
-    plt.suptitle("Consolidated Exploration Behavior Analysis", fontsize=16)
+    plt.suptitle("Consolidated Exploration Behavior Analysis (95% CI)", fontsize=16)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "exploration_analysis.pdf"
     plt.savefig(output_file, bbox_inches="tight")

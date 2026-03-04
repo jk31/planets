@@ -17,40 +17,33 @@ def analyze_performance(data_file: Path, output_dir: Path) -> None:
         raise SystemExit(1)
 
     results = pd.read_csv(data_file)
-
-    plt.figure(figsize=(12, 7))
     sns.set_theme(style="whitegrid")
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    line_color = sns.color_palette("rocket_r", n_colors=1)[0]
 
     sns.lineplot(
         data=results,
         x="trial",
         y="reward_received",
-        color="blue",
+        color=line_color,
         linewidth=2,
-        label="LLM Agent",
+        errorbar=("ci", 95),
+        ax=ax,
     )
 
-    plt.axhline(y=50, color="red", linestyle="--", alpha=0.6, label="Baseline (Safe Planet D)")
-    plt.title("LLM Agent Learning Curve: Reward per Trial (with 95% CI)", fontsize=16)
-    plt.xlabel("Trial Number", fontsize=12)
-    plt.ylabel("Average Reward Received", fontsize=12)
-    plt.ylim(bottom=0)
-    plt.legend(loc="lower right")
+    ax.set_title("LLM Learning Curve", fontsize=14)
+    ax.set_xlabel("Trial Number")
+    ax.set_ylabel("Avg Reward")
+    ax.set_ylim(bottom=0)
+    ax.grid(True, alpha=0.3)
 
-    max_trial = int(results["trial"].to_numpy().max())
-    avg_final = float(results.loc[results["trial"] == max_trial, "reward_received"].mean())
-    plt.annotate(
-        f"Final Avg: {avg_final:.1f}",
-        xy=(float(max_trial), float(avg_final)),
-        xytext=(float(max_trial - 10), float(avg_final + 10)),
-        arrowprops={"facecolor": "black", "shrink": 0.05, "width": 1, "headwidth": 5},
-    )
-
-    plt.tight_layout()
+    fig.suptitle("Consolidated Performance Analysis: Learning Curve (95% CI)", fontsize=16)
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.95))
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "performance_analysis.pdf"
-    plt.savefig(output_file)
-    plt.close()
+    fig.savefig(output_file)
+    plt.close(fig)
     print(f"LLM performance plot saved to {output_file}")
 
 
