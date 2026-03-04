@@ -1,64 +1,131 @@
 # Agent Guide
 
-- Windows Environment
-- Use python venv\scripts\activate
+- Windows environment.
+- Activate the virtual environment with `venv\Scripts\activate`.
 
-This project simulates a 4-armed contextual bandit game ("Mining in Space") with linear contextual learning agents. Context features are three binary signals: Mercury, Krypton, Nobelium. Arms correspond to planets A-D (permuted each game). Rewards are rounded to the nearest integer to simplify gameplay and analysis. All agents share a minimal interface:
+This repository simulates a 4-armed contextual bandit game ("Mining in Space") with linear contextual agents and an LLM-agent pipeline.
 
-- `select_arm(context) -> (int, dict)` picks an arm index 0-3 and returns an info dictionary containing decision metadata (intent, explanation, etc.).
-- `update(context, arm, reward)` incorporates the observed reward.
-- `get_recommendations(context, k=1.96)` returns per-arm means/uncertainties for logging or UI.
+## Game setup
 
-## Project Structure
-- `scripts/agent/`: Runtime scripts for normal linear-contextual agents.
-- `scripts/llm/`: Runtime scripts for LLM agents (special-case pipeline).
-- `scripts/analysis/agents/`: Analysis scripts for linear contextual agents.
-- `scripts/analysis/llm/`: Analysis scripts for LLM agents.
+- Context has three binary signals: Mercury, Krypton, Nobelium (`-1` or `+1`).
+- Arms are buttons `0..3` that are permuted to canonical planets `A..D` once per game (`arm_permutation`).
+- Rewards are sampled with Gaussian noise and rounded to integers by default (`integer_rewards=True`).
+- Canonical expected rewards in `scripts/game.py`:
+  - `A: 50 + 15*Mercury - 15*Krypton`
+  - `B: 50 + 15*Krypton - 15*Nobelium`
+  - `C: 50 + 15*Nobelium - 15*Mercury`
+  - `D: 50`
+
+All agents follow this interface:
+
+- `select_arm(context) -> (int, dict)`
+- `update(context, arm, reward)`
+- `get_recommendations(context, k=1.96)`
+
+## Project structure
+
+- `scripts/agents.py`: Linear/RLS agent implementations.
 - `scripts/game.py`: Shared game environment.
-- `scripts/agents.py`: Shared linear agent implementations.
-- `data/agents/` and `data/llm/`: CSV outputs split by pipeline.
-- `graphics/agents/` and `graphics/llm/`: Analysis outputs split by pipeline.
+- `scripts/agent/`: Simulation CLI, cleanup pipeline, and manual console game.
+- `scripts/llm/`: LLM agent implementation and LLM simulation runner.
+- `scripts/analysis/agents/`: Analysis scripts for linear-agent simulations.
+- `scripts/analysis/llm/`: Analysis scripts for LLM simulations.
+- `data/agents/`, `data/llm/`: Output CSV files.
+- `graphics/agents/`, `graphics/llm/`: Generated analysis artifacts.
 
-## Linear contextual agents (Recursive Least Squares)
-Defined in `LinearRegressionAgent` (`scripts/agents.py`), extended by UCB variant. Adds an intercept to the 3-feature context (shape 4). Maintains `A_inv` (precision) and `b` per arm; updates via Sherman-Morrison. Prediction returns `(mean, sigma)` where `sigma` comes from `x^T A_inv x`.
+## Linear contextual agents (RLS)
+
+`LinearRegressionAgent` (`scripts/agents.py`) adds an intercept to context (`[1, x1, x2, x3]`) and tracks per-arm:
+
+- `A_inv` (inverse precision matrix)
+- `b` (reward-weighted feature accumulator)
+
+Updates use Sherman-Morrison. Prediction returns `(mean, sigma)` where:
+
+- `mean = beta^T x`, with `beta = A_inv @ b`
+- `sigma = sqrt(x^T A_inv x)`
 
 Key parameters:
-- `n_features=3` (context dims).
-- `regularization` (default 100): Controls initial uncertainty. Higher values mean higher initial variance.
 
-### Concrete agents
-- **LinearUCBAgent**: Picks `argmax(mu + k*sigma)`. The `exploration_multiplier` (k) defaults to 1.96 but is configurable via `__init__`.
+- `n_features=3` (before intercept)
+- `regularization=100` by default (higher value -> larger initial uncertainty)
 
-### Self-Explaining Decisions
-The `LinearUCBAgent` provides transparency into its decision-making process by returning an info dictionary with:
-- `intent`: Classified as `explore` when uncertainty influences the choice (the UCB-best arm is not the unique mean-best arm, or mean estimates are tied), otherwise `exploit`.
-- `explanation`: A human-readable narrative.
-    - **Exploration**: Lists all three context signals to show what the agent is trying to learn in this situation.
-    - **Exploitation**: Lists all three context signals with per-feature value contributions (`beta * x`) for the chosen arm.
-- `context_features`: The three context signals.
+Concrete agent:
 
-- Utilities: 
-    - `get_feature_weights(feature_names)`: Returns readable betas per arm.
-    - `get_feature_uncertainties(context, feature_names)`: Returns per-arm, per-feature uncertainty contributions `(x^2 * A_inv[i,i])` for the given context.
+- `LinearUCBAgent`: chooses `argmax(mu + k*sigma)` with `exploration_multiplier` (`k`, default `1.96`).
 
-## How agents are used in the repo
-- **Simulation CLI**: Run `python scripts/agent/simulation.py --n_simulations 20 --n_trials 50` to execute a batch of simulations for UCB agents with varying regularization. Results are saved to `data/agents/simulation_results.csv`.
-- **Simulation API**: `run_single_game` and `run_grid_simulation` in `scripts/agent/simulation.py` wire any `agent_class` with `MiningInSpaceGame` (`scripts/game.py`). The game defaults to 50 trials and uses integer rewards. Logs include choices, rewards, arm permutation, exploration status, current weights, per-arm total uncertainties, and per-feature uncertainty contributions (see [SIMULATION_RESULTS_SCHEMA.md](SIMULATION_RESULTS_SCHEMA.md) for full column details).
-- **Cleanup and Full Run (normal agents only)**: `python scripts/agent/cleanup_and_run_all.py --simulations 20 --trials 50` cleans `data/agents` and `graphics/agents`, runs a fresh simulation batch, and runs all agent analysis scripts.
-- **LLM simulation (special case)**: `python scripts/llm/run_simulation.py --simulations 20 --trials 50 --output data/llm/simulation_results.csv` then run LLM analysis scripts under `scripts/analysis/llm/`.
-- **Consolidated Analysis**:
-    - `scripts/analysis/agents/analyze_performance.py`: Performs overall reward analysis via heatmaps and learning curves. Generates `graphics/agents/performance_analysis.pdf`.
-    - `scripts/analysis/agents/analyze_exploration.py`: Visualizes exploration rates over time across different regularization and $k$ values. Generates `graphics/agents/exploration_analysis.pdf`.
-    - `scripts/analysis/agents/analyze_uncertainty.py`: Analyzes the evolution of agent uncertainty (sigma) and breaks down feature-level uncertainty contributions. Generates `graphics/agents/uncertainty_analysis.pdf`.
-    - `scripts/analysis/agents/analyze_weights.py`: Processes simulation results to show how agent weights converge to ground truth for each planet. Generates `graphics/agents/weight_evolution_analysis.pdf`.
-    - `scripts/analysis/agents/analyze_planet_distributions.py`: Shows distributions of selected planets overall and over time. Generates `graphics/agents/planet_distribution_analysis.pdf`.
-    - `scripts/analysis/agents/visualize_simulation_arms.py`: Generates detailed timelines of arm selections for every individual simulation. Generates PDFs in `graphics/agents/simulations/`.
-    - `scripts/analysis/llm/analyze_performance.py`: Analyzes LLM reward performance. Generates `graphics/llm/performance_analysis.pdf`.
-    - `scripts/analysis/llm/analyze_exploration.py`: Analyzes LLM exploration behavior. Generates `graphics/llm/exploration_analysis.pdf`.
-- **Development**: `scripts/testing.ipynb` is used for prototyping and iterative testing of agent behaviors.
-- **Manual play**: `scripts/agent/game_in_console.py` lets a human choose arms in the console.
+### Decision transparency
 
-## Adding or tweaking agents
-- Derive from `LinearRegressionAgent` to reuse prediction/uncertainty helpers.
-- Expose tunable hyperparameters via `__init__`.
-- Remember to update `get_recommendations` if you want UI/logs to reflect new belief calculations.
+`LinearUCBAgent.select_arm` returns rich metadata in `info`:
+
+- `intent`: `explore` or `exploit`
+- `intent_reason`: short rationale string
+- `explanation`: human-readable sentence tied to current context
+- `exploration`: `1` for explore, `0` for exploit
+- `context_features`: ordered feature names
+- `chosen_mean`, `chosen_sigma`, `chosen_ucb`
+
+Utility methods:
+
+- `get_feature_weights(feature_names)`
+- `get_feature_uncertainties(context, feature_names)`
+
+## Running simulations
+
+### Linear-agent pipeline
+
+- Batch simulation:
+  - `python scripts/agent/simulation.py --n_simulations 20 --n_trials 50`
+- Quick run (subset grid):
+  - `python scripts/agent/simulation.py --quick`
+- Key API entry points in `scripts/agent/simulation.py`:
+  - `run_single_game(...)`
+  - `run_grid_simulation(...)`
+
+Outputs default to `data/agents/simulation_results.csv`.
+
+### Cleanup + full linear pipeline
+
+- `python scripts/agent/cleanup_and_run_all.py --simulations 20 --trials 50`
+- This cleans `data/agents/` and `graphics/agents/`, runs simulation, then runs all linear analysis scripts.
+- Script prefers `venv\Scripts\python.exe` when available.
+
+### LLM pipeline
+
+- Requires `GEMINI_API_KEY`.
+- Run:
+  - `python scripts/llm/run_simulation.py --simulations 20 --trials 50 --output data/llm/simulation_results.csv`
+- Main classes:
+  - `LLMAgent`
+  - `LLMDecisionError`
+
+## Analysis scripts
+
+### Linear-agent analysis (`scripts/analysis/agents/`)
+
+- `summarize_models.py` -> `graphics/agents/model_summary.csv`
+- `analyze_performance.py` -> `graphics/agents/performance_analysis.pdf`
+- `analyze_exploration.py` -> `graphics/agents/exploration_analysis.pdf`
+- `analyze_uncertainty.py` -> `graphics/agents/uncertainty_analysis.pdf`
+- `analyze_weights.py` -> `graphics/agents/weight_evolution_analysis.pdf`
+- `analyze_planet_distributions.py` -> `graphics/agents/planet_distribution_analysis.pdf`
+- `visualize_simulation_arms.py` -> `graphics/agents/simulations/*.pdf`
+
+### LLM analysis (`scripts/analysis/llm/`)
+
+- `summarize_models.py` -> `graphics/llm/model_summary.csv`
+- `analyze_performance.py` -> `graphics/llm/performance_analysis.pdf`
+- `analyze_exploration.py` -> `graphics/llm/exploration_analysis.pdf`
+
+## Other utilities
+
+- Manual play: `python scripts/agent/game_in_console.py`
+- Prototyping notebook: `scripts/testing.ipynb`
+- Simulation schema reference: `SIMULATION_RESULTS_SCHEMA.md`
+
+## Extending agents
+
+- Derive from `LinearRegressionAgent` when possible.
+- Keep the interface contract (`select_arm`, `update`, `get_recommendations`).
+- Surface hyperparameters in `__init__` for experiment control.
+- If you change logged outputs, keep simulation scripts and `SIMULATION_RESULTS_SCHEMA.md` aligned.
